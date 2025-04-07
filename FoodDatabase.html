@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Étel Adatbázis</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icon-192x192.png" />
+    <link rel="apple-touch-icon" href="icon-192x192.png" />
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 font-sans text-gray-100">
+    <div class="container mx-auto p-4 max-w-4xl">
+        <h1 class="text-3xl font-bold text-center mb-6 text-gray-100">Étel Adatbázis</h1>
+        
+        <div class="mb-4 flex flex-col sm:flex-row gap-4">
+            <input id="searchInput" type="text" placeholder="Keresés..." 
+                   class="w-full sm:w-1/2 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-gray-100 border-gray-700">
+            <select id="recommendationFilter" class="w-full sm:w-1/2 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-gray-100 border-gray-700">
+                <option value="all">Összes</option>
+                <option value="IGEN Kérek">IGEN Kérek</option>
+                <option value="KÖSZÖNÖM NEMKÉREK">KÖSZÖNÖM NEMKÉREK</option>
+            </select>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table id="foodTable" class="w-full bg-gray-800 shadow-md rounded-lg">
+                <thead>
+                    <tr class="bg-blue-700 text-gray-100">
+                        <th class="p-3 text-left">Megnevezés</th>
+                        <th class="p-3 text-left">Étel csoport</th>
+                        <th class="p-3 text-left">Ajánlás</th>
+                    </tr>
+                </thead>
+                <tbody id="foodTableBody"></tbody>
+            </table>
+            <div id="errorMessage" class="text-red-500 text-center mt-4 hidden">
+                Hiba történt az adatok betöltése közben. Kérlek, próbáld újra!
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const foodData = [
+            {name: "Áfonya", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
+            {name: "Agvé", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Ajóka", group: "Halak", recommendation: "IGEN Kérek"},
+            {name: "Alakor (eink09", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Alaszkai lapohal", group: "Halak", recommendation: "IGEN Kérek"},
+            {name: "Alaszkai lazac", group: "Halak", recommendation: "IGEN Kérek"},
+            {name: "Alga olaj", group: "Olajok", recommendation: "IGEN Kérek"},
+            {name: "Alma", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
+            {name: "Amerikai kelkáposzta", group: "Zöldségek keresztesviráguak", recommendation: "IGEN Kérek"},
+            {name: "Árpa", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Árpa (nem lehet kuktában főzni)", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Articsóka", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
+            {name: "Avokádó", group: "Gyümölcsök korlátlanul", recommendation: "IGEN Kérek"},
+            {name: "Baobab (majomkenyérfa gyümölcs)", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
+            {name: "Barack", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
+            {name: "Bárány", group: "Hús legelőn nevelt 110gr", recommendation: "IGEN Kérek"},
+            {name: "Barna rizs", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Berly Breadtól Julian Bakery Paleo", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
+            {name: "Bivaly mozzarella", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
+            {name: "Bivaly vaj", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
+            {name: "Bor", group: "Bor (napi 2dl Vörös)", recommendation: "IGEN Kérek"},
+            {name: "Borsó", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Bölény", group: "Hús legelőn nevelt 110gr", recommendation: "IGEN Kérek"},
+            {name: "Brazil dió (korlátozott meny.)", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
+            {name: "Brokkoli", group: "Zöldségek keresztesviráguak", recommendation: "IGEN Kérek"},
+            {name: "Bulgur", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Burgonya Burgonya csipsz", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Búza Sweet n Low (szaharin)", group: "Pszeudo-gabonák kuktában főzés sem távolítja el a lektineket", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Buzafű", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Capello s fettuccine tészta", group: "\"Foodles elfogadható tészták\"", recommendation: "IGEN Kérek"},
+            {name: "Cékla Nyers", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
+            {name: "Chiamag", group: "Diófélék és Magok", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Chilipaprika", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Cikória", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
+            {name: "Cikória gyökérből inulin", group: "Édesítők", recommendation: "IGEN Kérek"},
+            {name: "Citrusfélék nem léformában", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
+            {name: "Cukkini", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Cukor", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Cukorborsó", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Csicseriborsó", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Csíráztatott Gabonák", group: "Pszeudo-gabonák kuktában főzés sem távolítja el a lektineket", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Csirke", group: "Szabadtartású 200gr Nem szabadtartású 110gr/nap", recommendation: "IGEN Kérek"},
+            {name: "Csodatészta", group: "\"Foodles elfogadható tészták\"", recommendation: "IGEN Kérek"},
+            {name: "Datolya", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
+            {name: "DatolyaszilvaűJicama", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
+            {name: "Dinnyefélék az összes", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Dió", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
+            {name: "Dióolaj", group: "Olajok", recommendation: "IGEN Kérek"},
+            {name: "Ecetek", group: "Ecetek mind (hozzáadott cukor nélkül", recommendation: "IGEN Kérek"},
+            {name: "Édesburgony", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
+            {name: "Edesburgonya Liszt", group: "Lisztek", recommendation: "IGEN Kérek"},
+            {name: "Eper", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
+            {name: "Eritrit (ologoszacharidokat is tartalmaz)", group: "Édesítők", recommendation: "IGEN Kérek"},
+            {name: "Étcsokoládé", group: "90%-os 30g naponta", recommendation: "IGEN Kérek"},
+            {name: "Fácán Nyirfad Galamb Fürj", group: "Szabadtartású 200gr Nem szabadtartású 110gr/nap", recommendation: "IGEN Kérek"},
+            {name: "Fagyasztott joghurt", group: "Nem dél-Európai tehéntej termékek kazein A-1-et tartalmaznak", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Fagylalt", group: "Nem dél-Európai tehéntej termékek kazein A-1-et tartalmaznak", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Fagylalt fagyasztott deszertek", group: "Fagylalt Tejtermék mentes", recommendation: "IGEN Kérek"},
+            {name: "Farcia vagy Olasz vaj", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
+            {name: "Fehér rizs", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Fehérrépa", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
+            {name: "Fenyőmag (korlátozott meny)", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
+            {name: "Fésűkagyló", group: "Halak", recommendation: "IGEN Kérek"},
+            {name: "Fokhagyma", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
+            {name: "Földimogyoró", group: "Diófélék és Magok", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Földimogyoró olaj", group: "Olajok", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Füge", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
+            {name: "Fügekaktuszok", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
+            {name: "Garnéla rák", group: "Halak", recommendation: "IGEN Kérek"},
+            {name: "Gesztenye", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
+            {name: "Ghi", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
+            {name: "Glucoannan (konjac gyökér ördögnyelv)", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
+            {name: "Gojibogyó", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Gombák", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
+            {name: "Gránátalma", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
+            {name: "Gyógynövények", group: "Mind kivéve chilipehely Misszió", recommendation: "IGEN Kérek"},
+            {name: "Hagyma", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
+            {name: "Hajdina", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Hawaii hal", group: "Halak", recommendation: "IGEN Kérek"},
+            {name: "Homár", group: "Halak", recommendation: "IGEN Kérek"},
+            {name: "Hüvelyesek", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Inulin", group: "Édesítők", recommendation: "IGEN Kérek"},
+            {name: "Ízesített csukamájola", group: "Olajok", recommendation: "IGEN Kérek"},
+            {name: "Jávorszarvas", group: "Hús legelőn nevelt 110gr", recommendation: "IGEN Kérek"},
+            {name: "Jégcsapretek", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
+            {name: "Jeruzsálemi articsóka", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
+            {name: "Joghurt Görög joghurt is", group: "Nem dél-Európai tehéntej termékek kazein A-1-et tartalmaznak", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Just Like Sugar", group: "Édesítők", recommendation: "IGEN Kérek"},
+            {name: "Kacsa", group: "Szabadtartású 200gr Nem szabadtartású 110gr/nap", recommendation: "IGEN Kérek"},
+            {name: "Kagyló", group: "Halak", recommendation: "IGEN Kérek"},
+            {name: "Kajszibarack", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
+            {name: "Kamut", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Kanten tészta", group: "\"Foodles elfogadható tészták\"", recommendation: "IGEN Kérek"},
+            {name: "Karfiol", group: "Zöldségek keresztesviráguak", recommendation: "IGEN Kérek"},
+            {name: "Kashi", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Kasszava (tápióka)", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
+            {name: "Kasszavai Liszt", group: "Lisztek", recommendation: "IGEN Kérek"},
+            {name: "Kazein A-2-es tej csk tejszinként", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
+            {name: "Kecske- és Juhkefir", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
+            {name: "Kecskejoghurt", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
+            {name: "Kecsketej Kecskesajt", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
+            {name: "Kefires Gabonák", group: "Pszeudo-gabonák kuktában főzés sem távolítja el a lektineket", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Kék kagyló", group: "Halak", recommendation: "IGEN Kérek"},
+            {name: "Kekszek", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Kelbimbó", group: "Zöldségek keresztesviráguak", recommendation: "IGEN Kérek"},
+            {name: "KelkáposztaűFehér és Vörös káposzta", group: "Zöldségek keresztesviráguak", recommendation: "IGEN Kérek"},
+            {name: "Kender ferfhérje por", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
+            {name: "Kendermag", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
+            {name: "Kenyér", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Kenyér és bagettek", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
+            {name: "Kesudió", group: "Diófélék és Magok", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Kimcsi", group: "Zöldségek keresztesviráguak", recommendation: "IGEN Kérek"},
+            {name: "Kivi", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
+            {name: "Kókusz Fagylalt max 1gr cukor", group: "Fagylalt", recommendation: "IGEN Kérek"},
+            {name: "Kókusz Liszt", group: "Lisztek", recommendation: "IGEN Kérek"},
+            {name: "Kokuszdió Nem kókusz víz", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
+            {name: "Kókuszjoghurt", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
+            {name: "Kókuszlisztes műzli", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
+            {name: "Kókusztej Édesítetlen tejtermékpótló", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
+            {name: "Kókusztejszin édesítetlen", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
+            {name: "Konzerv tonhal", group: "Halak", recommendation: "IGEN Kérek"},
+            {name: "Koriander", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
+            {name: "Köles Cirok", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
+            {name: "Kukorica", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Kukorica keményítő", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Kukorica olaj", group: "Olajok", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Kukorica szirup", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Kukoricás termékek", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Lenmag", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
+            {name: "Liba", group: "Szabadtartású 200gr Nem szabadtartású 110gr/nap", recommendation: "IGEN Kérek"},
+            {name: "Light italok", group: "Pszeudo-gabonák kuktában főzés sem távolítja el a lektineket", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Liszt", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Luo hanguo (Nutresse márka jó)", group: "Édesítők", recommendation: "IGEN Kérek"},
+            {name: "Makadámdiò-olaj", group: "Olajok", recommendation: "IGEN Kérek"},
+            {name: "Makadámdió", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
+            {name: "Málna", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
+            {name: "Maltodextrin", group: "Pszeudo-gabonák kuktában főzés sem távolítja el a lektineket", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Mandula Liszt", group: "Lisztek", recommendation: "IGEN Kérek"},
+            {name: "Mángold", group: "Zöldségek keresztesviráguak", recommendation: "IGEN Kérek"},
+            {name: "Maréna Édesvizi sügér", group: "Bármilyen vadon fogott hal 60-120gr", recommendation: "IGEN Kérek"},
+            {name: "Marhahús", group: "Hús legelőn nevelt 110gr", recommendation: "IGEN Kérek"},
+            {name: "Meggy", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
+            {name: "Minden babféle a csírák is", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Minden lencse", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Mogyoró", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
+            {name: "Mogyoró Liszt", group: "Lisztek", recommendation: "IGEN Kérek"},
+            {name: "Mogyoróhagyma", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
+            {name: "Műzli", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Napa káposztaűKínai kel", group: "Zöldségek keresztesviráguak", recommendation: "IGEN Kérek"},
+            {name: "Napraforgó olaj", group: "Olajok", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Napraforgómag", group: "Diófélék és Magok", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Nektarin", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
+            {name: "Nutraweet (aszpartan)", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Nyers savanyú káposzta", group: "Zöldségek keresztesviráguak", recommendation: "IGEN Kérek"},
+            {name: "Nyilgyökér Liszt", group: "Lisztek", recommendation: "IGEN Kérek"},
+            {name: "OkraűSpárga", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
+            {name: "Olajok", group: "Olajok", recommendation: "IGEN Kérek"},
+            {name: "Olíva olaj", group: "Olajok", recommendation: "IGEN Kérek"},
+            {name: "Organikus sajtkrém", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
+            {name: "Organikus tejföl", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
+            {name: "Organikus tejszin", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
+            {name: "Osztriga", group: "Halak", recommendation: "IGEN Kérek"},
+            {name: "Padlizsán", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Pakchoi", group: "Zöldségek keresztesviráguak", recommendation: "IGEN Kérek"},
+            {name: "Pálmaszív", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
+            {name: "Pamutmag olaj", group: "Olajok", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Paprika", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Paradicsom", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Parmigiano-Reggiano", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
+            {name: "Pasta Slim tészta", group: "\"Foodles elfogadható tészták\"", recommendation: "IGEN Kérek"},
+            {name: "PaszternákűJukka", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
+            {name: "Pattogatott kukorica", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "PekánDió", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
+            {name: "Perilla olaj", group: "Olajok", recommendation: "IGEN Kérek"},
+            {name: "Pisztácia", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
+            {name: "Póréhagyma", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
+            {name: "Pórsáfrány olaj", group: "Olajok", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Prosciutto", group: "Hús legelőn nevelt 110gr", recommendation: "IGEN Kérek"},
+            {name: "Pulyka", group: "Szabadtartású 200gr Nem szabadtartású 110gr/nap", recommendation: "IGEN Kérek"},
+            {name: "Quinoa", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Rágcsálnivalók", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Rák", group: "Halak", recommendation: "IGEN Kérek"},
+            {name: "Ratabaga", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
+            {name: "Répa", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
+            {name: "Repce olaj", group: "Olajok", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Retek", group: "Zöldségek keresztesviráguak", recommendation: "IGEN Kérek"},
+            {name: "Rizs", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Rizskorpa olaj", group: "Olajok", recommendation: "IGEN Kérek"},
+            {name: "Ropogós Körte (Anjou bosc comice)", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
+            {name: "Rozs (nem lehet kuktában főzni)", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Röviditalok", group: "Röviditalok (napi 15ml)", recommendation: "IGEN Kérek"},
+            {name: "Rukola", group: "Zöldségek keresztesviráguak", recommendation: "IGEN Kérek"},
+            {name: "Sajt Rikotta Túró", group: "Nem dél-Európai tehéntej termékek kazein A-1-et tartalmaznak", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Savófehérje por", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
+            {name: "Sertéshús emberséggel nevelt", group: "Hús legelőn nevelt 110gr", recommendation: "IGEN Kérek"},
+            {name: "Shirataki tészta", group: "\"Foodles elfogadható tészták\"", recommendation: "IGEN Kérek"},
+            {name: "Siete márkájú tortilla, kaszava", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
+            {name: "Splenda (szukralóz)", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Strucc", group: "Szabadtartású 200gr Nem szabadtartású 110gr/nap", recommendation: "IGEN Kérek"},
+            {name: "Sütemények", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Sütőtök", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Svájci sajto", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
+            {name: "Swett One Sunett (aceszulfát K)", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Szabadtartású vagy omega3 tojás max 4db", group: "Szabadtartású 200gr Nem szabadtartású 110gr/nap", recommendation: "IGEN Kérek"},
+            {name: "Szardinia", group: "Halak", recommendation: "IGEN Kérek"},
+            {name: "Szerzetesek körtéje", group: "Édesítők", recommendation: "IGEN Kérek"},
+            {name: "Szezám mag", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
+            {name: "Szezám olaj", group: "Olajok", recommendation: "IGEN Kérek"},
+            {name: "Szilva", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
+            {name: "Szója", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Szója olaj", group: "Olajok", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Szójafehérje", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Szőlőmag Liszt", group: "Lisztek", recommendation: "IGEN Kérek"},
+            {name: "Szőlőmag olaj", group: "Olajok", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Sztívia", group: "Édesítők", recommendation: "IGEN Kérek"},
+            {name: "Tarógyökér", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
+            {name: "Tej", group: "Nem dél-Európai tehéntej termékek kazein A-1-et tartalmaznak", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Tengeri hínár tészta", group: "\"Foodles elfogadható tészták\"", recommendation: "IGEN Kérek"},
+            {name: "Tészta", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Textúrált zöldségfehérje", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Tigrismogyoró", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
+            {name: "Tigrismogyoró Liszt", group: "Lisztek", recommendation: "IGEN Kérek"},
+            {name: "Tintahal", group: "Halak", recommendation: "IGEN Kérek"},
+            {name: "Tofu", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Tortilla", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Tökféle az összes", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Tökmag", group: "Diófélék és Magok", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Tönkölybúza", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Uborka", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Útifűmag", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
+            {name: "Vad rizy", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Vaddisznó", group: "Hús legelőn nevelt 110gr", recommendation: "IGEN Kérek"},
+            {name: "Vadhús", group: "Hús legelőn nevelt 110gr", recommendation: "IGEN Kérek"},
+            {name: "Valódi parmezán", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
+            {name: "Vizitorma", group: "Zöldségek keresztesviráguak", recommendation: "IGEN Kérek"},
+            {name: "Vöröspálma-olaj", group: "Olajok", recommendation: "IGEN Kérek"},
+            {name: "Wrap (kókuszlisztből)", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
+            {name: "Xilit", group: "Édesítők", recommendation: "IGEN Kérek"},
+            {name: "Yacon Mexikói jamgyökér", group: "Édesítők", recommendation: "IGEN Kérek"},
+            {name: "Zab (nem lehet kuktában főzni)", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Zeller", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
+            {name: "Zellergyökér", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
+            {name: "Zöld banán főzőbanán", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
+            {name: "Zöld banán Liszt", group: "Lisztek", recommendation: "IGEN Kérek"},
+            {name: "Zöld mangó és papaja", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
+            {name: "Zöld szójabab", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Zöldbab", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Zöldboró fehérje", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Zöldség olaj", group: "Olajok", recommendation: "KÖSZÖNÖM NEMKÉREK"},
+            {name: "Zöldségzöldje", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
+            {name: "Zsíros Francia Olasz sajtok", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"}
+        ];
+
+        function populateTable(data) {
+            const tbody = document.getElementById('foodTableBody');
+            const errorMessage = document.getElementById('errorMessage');
+            tbody.innerHTML = '';
+            try {
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.className = 'border-b border-gray-700 hover:bg-gray-700';
+                    row.innerHTML = `
+                        <td class="p-3">${item.name}</td>
+                        <td class="p-3">${item.group}</td>
+                        <td class="p-3 ${item.recommendation === 'IGEN Kérek' ? 'text-green-400' : 'text-red-500'}">${item.recommendation}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                errorMessage.classList.add('hidden');
+            } catch (error) {
+                console.error('Hiba a táblázat feltöltése közben:', error);
+                errorMessage.classList.remove('hidden');
+            }
+        }
+
+        function filterTable() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const recommendationFilter = document.getElementById('recommendationFilter').value;
+
+            let filteredData = foodData;
+
+            // Szűrés az "Ajánlás" alapján
+            if (recommendationFilter !== 'all') {
+                filteredData = filteredData.filter(item => item.recommendation === recommendationFilter);
+            }
+
+            // Szűrés a keresőmező alapján
+            filteredData = filteredData.filter(item => 
+                item.name.toLowerCase().includes(searchTerm) ||
+                item.group.toLowerCase().includes(searchTerm) ||
+                item.recommendation.toLowerCase().includes(searchTerm)
+            );
+
+            populateTable(filteredData);
+        }
+
+        document.getElementById('searchInput').addEventListener('input', filterTable);
+        document.getElementById('recommendationFilter').addEventListener('change', filterTable);
+
+        // Initial population of the table
+        populateTable(foodData);
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92caede0c82dae89',t:'MTc0NDA0MzYzMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
