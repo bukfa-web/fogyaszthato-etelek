@@ -558,6 +558,31 @@
         showToast('Nincsenek betöltött adatok. Kérlek, ellenőrizd az initialFoodData változót!', 'error');
         return;
     }
+
+    // Táblázat renderelése és csoportok feltöltése
+    renderTable(currentData);
+    populateGroupOptions();
+}
+
+    if (!isValidData) {
+        currentData = loadInitialData();
+        // Ha az initialFoodData üres, használjunk egy alapértelmezett adathalmazt
+        if (!currentData || currentData.length === 0) {
+            console.log('Az initialFoodData üres, alapértelmezett adatok betöltése...');
+            currentData = [
+                {"name": "Alapértelmezett Étel", "group": "Egyéb", "recommendation": "Igen Kérek", "note": "Ez egy alapértelmezett tétel, mert az initialFoodData üres volt."}
+            ];
+        }
+        localStorage.setItem(foodDataKey, JSON.stringify(currentData));
+        console.log('Adatok betöltve az initialFoodData-ból:', currentData);
+    }
+
+    // Ha a currentData üres, figyelmeztetés
+    if (!currentData || currentData.length === 0) {
+        console.log('A currentData üres, ellenőrizd az initialFoodData változót!');
+        showToast('Nincsenek betöltött adatok. Kérlek, ellenőrizd az initialFoodData változót!', 'error');
+        return;
+    }
 }
 
             // Eltávolítjuk a " jeleket az ételcsoportokból és frissítjük a recommendation értékeket
