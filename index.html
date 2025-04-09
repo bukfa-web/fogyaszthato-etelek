@@ -236,9 +236,9 @@
         //     {"name": "Agvé", "group": "Finomított keményítőt tartalmazó ételek", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
         //     ...többi adat...
         // ];
-        const initialFoodData = [    
-    
-    // 1-100 (artifact_id: d715b846-7cec-4ec0-865f-4404d0a0d865)
+		
+		// Ide illeszd be a foodData.json tartalmát
+	const initialFoodData = [
     {"name": "Áfonya", "group": "Gyümölcsök", "recommendation": "Igen Kérek", "note": "Antioxidánsokban gazdag, szezonálisan kis mennyiségben"},
     {"name": "Agvé", "group": "Finomított keményítőt tartalmazó ételek", "recommendation": "Köszönöm nem kérek", "note": "Magas fruktóztartalom, káros a bélflórára"},
     {"name": "Ajóka", "group": "Halak", "recommendation": "Igen Kérek", "note": "Omega-3 forrás, támogatja a szív egészségét"},
@@ -332,8 +332,6 @@
     {"name": "Kajszibarack", "group": "Gyümölcsök", "recommendation": "Igen Kérek", "note": "Vitaminforrás, szezonálisan kis mennyiségben"},
     {"name": "Kamut", "group": "Pszeudo-gabonák", "recommendation": "Köszönöm nem kérek", "note": "Lektintartalma miatt kerülendő"},
     {"name": "Kanten tészta", "group": "Tészták (elfogadható)", "recommendation": "Igen Kérek", "note": "Lektinmentes, alacsony szénhidrát"},
-
-    // 101-200 (artifact_id: 6fd140be-cf7b-4c73-8f2f-e65f86edd396)
     {"name": "Karfiol", "group": "Zöldségek (keresztesvirágúak)", "recommendation": "Igen Kérek", "note": "Méregtelenítő, alacsony szénhidrát"},
     {"name": "Kashi", "group": "Pszeudo-gabonák", "recommendation": "Köszönöm nem kérek", "note": "Lektintartalma miatt gyulladáskeltő"},
     {"name": "Kasszava (tápióka)", "group": "Ellenálló keményítők", "recommendation": "Igen Kérek", "note": "Rostban gazdag, mértékkel fogyasztható"},
@@ -431,8 +429,6 @@
     {"name": "Rizskorpa olaj", "group": "Olajok", "recommendation": "Igen Kérek", "note": "Antioxidánsokban gazdag, mértékkel"},
     {"name": "Ropogós Körte (Anjou bosc comice)", "group": "Gyümölcsök", "recommendation": "Igen Kérek", "note": "Rostforrás, szezonálisan kis mennyiségben"},
     {"name": "Rozs (nem lehet kuktában főzni)", "group": "Pszeudo-gabonák", "recommendation": "Köszönöm nem kérek", "note": "Lektintartalma miatt kerülendő"},
-
-    // 201-320 (artifact_id: 0859b067-b6de-454f-b5bc-b9d0f47fedc9)
     {"name": "Röviditalok", "group": "Röviditalok", "recommendation": "Igen Kérek", "note": "Tiszta alkohol, napi 15 ml ajánlott"},
     {"name": "Rukola", "group": "Zöldségek (keresztesvirágúak)", "recommendation": "Igen Kérek", "note": "Antioxidánsokban gazdag, bélbarát"},
     {"name": "Sajt Rikotta Túró", "group": "Tejtermékek (kerülendő)", "recommendation": "Köszönöm nem kérek", "note": "A1 kazein, gyulladáskeltő"},
@@ -488,33 +484,8 @@
     {"name": "Zöld banán főzőbanán", "group": "Ellenálló keményítők", "recommendation": "Igen Kérek", "note": "Ellenálló keményítő, mértékkel"},
     {"name": "Zöld banán Liszt", "group": "Lisztek", "recommendation": "Igen Kérek", "note": "Lektinmentes, rostban gazdag"},
     {"name": "Zöld mangó és papaya", "group": "Ellenálló keményítők", "recommendation": "Igen Kérek", "note": "Ellenálló keményítő, mértékkel"},
-    {"name": "Zöld szójabab", "group": "Zöldségek (lektintartalmúak)", "recommendation": "Köszönöm nem kérek", "note": "Lektintartalom, kuktában főzve vegánok"},
-    {"name": "Zöldbab", "group": "Zöldségek (lektintartalmúak)", "recommendation": "Köszönöm nem kérek", "note": "Lektintartalom, kuktában főzve vegánok"},
-    {"name": "Zöldborsó fehérje", "group": "Zöldségek (lektintartalmúak)", "recommendation": "Köszönöm nem kérek", "note": "Lektintartalom, kuktában főzve vegánok"},
-    {"name": "Zöldség olaj", "group": "Olajok", "recommendation": "Köszönöm nem kérek", "note": "Magas omega-6, gyulladáskeltő"},
-    {"name": "Zöldségzöldje", "group": "Zöldségek", "recommendation": "Igen Kérek", "note": "Vitaminforrás, alacsony lektintartalom"},
-    {"name": "Zsíros Francia Olasz sajtok", "group": "Tejtermékek", "recommendation": "Igen Kérek", "note": "A2 kazein, napi 300 g"},
-    {"name": "Spenót", "group": "Zöldségek", "recommendation": "Igen Kérek", "note": "Vitaminokban gazdag, alacsony lektintartalom"},
-    {"name": "Endívia", "group": "Zöldségek", "recommendation": "Igen Kérek", "note": "Rostforrás, bélbarát"},
-    {"name": "Sárgabarack", "group": "Gyümölcsök", "recommendation": "Igen Kérek", "note": "Vitaminforrás, szezonálisan kis mennyiségben"},
-    {"name": "Ananász", "group": "Gyümölcsök", "recommendation": "Köszönöm nem kérek", "note": "Magas fruktóztartalom, bélproblémák"},
-    {"name": "Mangó", "group": "Gyümölcsök", "recommendation": "Köszönöm nem kérek", "note": "Magas fruktóztartalom, kerülendő"},
-    {"name": "Sárgadinnye", "group": "Gyümölcsök (botanikailag)", "recommendation": "Köszönöm nem kérek", "note": "Magas fruktóztartalom, bélkárosító"},
-    {"name": "Francia vaj", "group": "Tejtermékek", "recommendation": "Igen Kérek", "note": "A2 kazein, napi 300 g"},
-    {"name": "Kapor", "group": "Zöldségek", "recommendation": "Igen Kérek", "note": "Gyulladáscsökkentő, ízesítő"},
-    {"name": "Petrezselyem", "group": "Zöldségek", "recommendation": "Igen Kérek", "note": "Antioxidánsok, méregtelenítő"},
-    {"name": "Rozmaring", "group": "Zöldségek", "recommendation": "Igen Kérek", "note": "Gyulladáscsökkentő, ízesítő"},
-    {"name": "Kakukkfű", "group": "Zöldségek", "recommendation": "Igen Kérek", "note": "Antimikrobiális, bélbarát"},
-    {"name": "Bazsalikom", "group": "Zöldségek", "recommendation": "Igen Kérek", "note": "Gyulladáscsökkentő, ízesítő"},
-    {"name": "Oregánó", "group": "Zöldségek", "recommendation": "Igen Kérek", "note": "Antioxidánsok, immunerősítő"},
-    {"name": "Gyömbér", "group": "Zöldségek", "recommendation": "Igen Kérek", "note": "Gyulladáscsökkentő, emésztést segítő"},
-    {"name": "Kurkuma", "group": "Zöldségek", "recommendation": "Igen Kérek", "note": "Erős gyulladáscsökkentő, antioxidáns"},
-    {"name": "Sáfrány", "group": "Zöldségek", "recommendation": "Igen Kérek", "note": "Antioxidánsok, ízesítő"},
-    {"name": "Szegfűszeg", "group": "Zöldségek", "recommendation": "Igen Kérek", "note": "Antimikrobiális, ízesítő"},
-    {"name": "Fahéj", "group": "Zöldségek", "recommendation": "Igen Kérek", "note": "Vércukorszint szabályozó, ízesítő"},
-    {"name": "Szerecsendió", "group": "Zöldségek", "recommendation": "Igen Kérek", "note": "Gyulladáscsökkentő, mértékkel"},
-    {"name": "Vanília", "group": "Zöldségek", "recommendation": "Igen Kérek", "note": "Cukormentes kivonat, ízesítő"}
-]; // Ide illeszd be a foodData.json tartalmát
+    {"name": "Zöld szójabab", "group": "Zöldségek (lektintartalmúak)", "recommendation": "Köszönöm nem kérek", "note": "Lektintartalom, kuktában főzve vegánok"}
+];
 
         // Toast üzenet megjelenítése
         function showToast(message, type = 'success') {
@@ -542,23 +513,52 @@
             return initialFoodData;
         }
 
-        // Adatok betöltése localStorage-ból vagy a beágyazott adatokból
+        // Adatok betöltése localStorage-ból vagy a beágyazott adatokból ezt módosítottam!!!
         async function loadDataFromLocalStorage() {
-            const savedData = localStorage.getItem(foodDataKey);
-            if (savedData) {
-                currentData = JSON.parse(savedData);
+    const savedData = localStorage.getItem(foodDataKey);
+    let isValidData = false;
+
+    if (savedData) {
+        try {
+            const parsedData = JSON.parse(savedData);
+            // Ellenőrizzük, hogy minden tételnek van-e name, group, recommendation és note mezője
+            isValidData = Array.isArray(parsedData) && parsedData.every(item => 
+                item.name && typeof item.name === 'string' &&
+                item.group && typeof item.group === 'string' &&
+                item.recommendation && typeof item.recommendation === 'string' &&
+                typeof item.note === 'string' // note mező ellenőrzése
+            );
+            if (isValidData) {
+                currentData = parsedData;
                 console.log('Adatok betöltve a localStorage-ból:', currentData);
             } else {
-                // Ha nincs mentett adat, betöltjük a beágyazott adatokat
-                currentData = loadInitialData();
+                console.log('A localStorage adatai nem megfelelőek, initialFoodData betöltése...');
             }
+        } catch (error) {
+            console.error('Hiba a localStorage adatok betöltése során:', error);
+        }
+    }
 
-            // Ha a currentData üres, figyelmeztetés
-            if (!currentData || currentData.length === 0) {
-                console.log('A currentData üres, ellenőrizd az initialFoodData változót!');
-                showToast('Nincsenek betöltött adatok. Kérlek, ellenőrizd az initialFoodData változót!', 'error');
-                return;
-            }
+    if (!isValidData) {
+        currentData = loadInitialData();
+        // Ha az initialFoodData üres, használjunk egy alapértelmezett adathalmazt
+        if (!currentData || currentData.length === 0) {
+            console.log('Az initialFoodData üres, alapértelmezett adatok betöltése...');
+            currentData = [
+                {"name": "Alapértelmezett Étel", "group": "Egyéb", "recommendation": "Igen Kérek", "note": "Ez egy alapértelmezett tétel, mert az initialFoodData üres volt."}
+            ];
+        }
+        localStorage.setItem(foodDataKey, JSON.stringify(currentData));
+        console.log('Adatok betöltve az initialFoodData-ból:', currentData);
+    }
+
+    // Ha a currentData üres, figyelmeztetés
+    if (!currentData || currentData.length === 0) {
+        console.log('A currentData üres, ellenőrizd az initialFoodData változót!');
+        showToast('Nincsenek betöltött adatok. Kérlek, ellenőrizd az initialFoodData változót!', 'error');
+        return;
+    }
+}
 
             // Eltávolítjuk a " jeleket az ételcsoportokból és frissítjük a recommendation értékeket
             currentData = currentData.map(item => ({
