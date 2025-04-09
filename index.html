@@ -11,341 +11,1020 @@
     <link rel="icon" type="image/png" href="icon-192x192.png" />
     <link rel="apple-touch-icon" href="icon-192x192.png" />
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .custom-dropdown {
+            position: relative;
+            width: 100%;
+        }
+        .custom-dropdown input, .custom-dropdown select {
+            width: 100%;
+            padding: 8px;
+            background-color: #374151;
+            color: #f3f4f6;
+            border: 1px solid #4b5563;
+            border-radius: 0.5rem;
+        }
+        .custom-dropdown .options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: #374151;
+            border: 1px solid #4b5563;
+            border-radius: 0.5rem;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 10;
+            display: none;
+        }
+        .custom-dropdown .options div {
+            padding: 8px;
+            cursor: pointer;
+        }
+        .custom-dropdown .options div:hover {
+            background-color: #4b5563;
+        }
+        .sort-icon {
+            display: inline-block;
+            margin-left: 4px;
+            font-size: 12px;
+        }
+        /* Toast üzenet stílusa */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            color: #f3f4f6;
+            padding: 10px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+        .toast.success {
+            background-color: #16a34a; /* bg-green-600 */
+        }
+        .toast.error {
+            background-color: #dc2626; /* bg-red-600 */
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        /* Fade-in animáció a táblázat soraihoz */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .table-row {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        /* Drag-and-drop stílusa */
+        .dragging {
+            opacity: 0.5;
+        }
+        .drag-over {
+            background-color: #ca8a04; /* bg-yellow-500 */
+        }
+        /* Oszlop kiválasztó menü stílusa */
+        .column-selector {
+            position: relative;
+        }
+        .column-selector-options {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background-color: #374151;
+            border: 1px solid #4b5563;
+            border-radius: 0.5rem;
+            z-index: 10;
+            display: none;
+        }
+        .column-selector-options div {
+            padding: 8px;
+            cursor: pointer;
+        }
+        .column-selector-options div:hover {
+            background-color: #4b5563;
+        }
+    </style>
 </head>
 <body class="bg-gray-900 font-sans text-gray-100">
     <div class="container mx-auto p-4 max-w-4xl">
         <h1 class="text-3xl font-bold text-center mb-6 text-gray-100">Étel Adatbázis</h1>
-        
-        <div class="mb-4 flex flex-col sm:flex-row gap-4">
-            <input id="searchInput" type="text" placeholder="Keresés..." 
-                   class="w-full sm:w-1/2 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-gray-100 border-gray-700">
-            <select id="recommendationFilter" class="w-full sm:w-1/2 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-gray-100 border-gray-700">
-                <option value="all">Összes</option>
-                <option value="IGEN Kérek">IGEN Kérek</option>
-                <option value="KÖSZÖNÖM NEMKÉREK">KÖSZÖNÖM NEMKÉREK</option>
-            </select>
+
+        <!-- Új étel hozzáadása űrlap -->
+        <div class="mb-6 p-4 bg-gray-800 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4 text-gray-100">Új étel hozzáadása</h2>
+            <div class="flex flex-col sm:flex-row gap-4">
+                <input id="newFoodName" type="text" placeholder="Étel neve" 
+                       class="w-full sm:w-1/3 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-700 text-gray-100 border-gray-600">
+                <div class="custom-dropdown w-full sm:w-1/3">
+                    <input id="newFoodGroupInput" type="text" placeholder="Étel csoport" 
+                           class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-700 text-gray-100 border-gray-600">
+                    <div id="newFoodGroupOptions" class="options"></div>
+                </div>
+                <select id="newFoodRecommendation" class="w-full sm:w-1/3 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-700 text-gray-100 border-gray-600">
+                    <option value="Igen Kérek">Igen Kérek</option>
+                    <option value="Köszönöm nem kérek">Köszönöm nem kérek</option>
+                </select>
+                <button id="addFoodButton" class="w-full sm:w-auto p-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm hover:scale-105 transition-transform">
+                    Hozzáadás
+                </button>
+            </div>
+            <!-- Export/Import gombok -->
+            <div class="flex flex-col sm:flex-row gap-4 mt-4">
+                <button id="exportButton" class="w-full sm:w-auto p-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm hover:scale-105 transition-transform">
+                    Export
+                </button>
+                <label for="importInput" class="w-full sm:w-auto p-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm hover:scale-105 transition-transform cursor-pointer text-center">
+                    Import
+                </label>
+                <input type="file" id="importInput" accept=".json" class="hidden">
+            </div>
         </div>
 
-        <div class="overflow-x-auto">
+        <!-- Kereső és szűrő -->
+        <div class="mb-4 flex flex-col sm:flex-row gap-4">
+            <div class="flex w-full sm:w-1/2 gap-2">
+                <input id="searchInput" type="text" placeholder="Keresés..." 
+                       class="flex-grow p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-gray-100 border-gray-700">
+                <button id="clearSearchButton" class="p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm hover:scale-105 transition-transform">
+                    Törlés
+                </button>
+                <button id="resetFiltersButton" class="p-1.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 text-sm hover:scale-105 transition-transform">
+                    Reset
+                </button>
+            </div>
+            <div class="flex w-full sm:w-1/2 gap-2">
+                <select id="recommendationFilter" class="flex-grow p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-gray-100 border-gray-600">
+                    <option value="all">Összes</option>
+                    <option value="Igen Kérek">Igen Kérek</option>
+                    <option value="Köszönöm nem kérek">Köszönöm nem kérek</option>
+                </select>
+                <div class="column-selector">
+                    <button id="columnSelectorButton" class="p-1.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 text-sm hover:scale-105 transition-transform">
+                        Oszlopok
+                    </button>
+                    <div id="columnSelectorOptions" class="column-selector-options">
+                        <div class="flex items-center p-2">
+                            <input type="checkbox" id="column-name" checked class="mr-2">
+                            <label for="column-name">Megnevezés</label>
+                        </div>
+                        <div class="flex items-center p-2">
+                            <input type="checkbox" id="column-group" checked class="mr-2">
+                            <label for="column-group">Étel csoport</label>
+                        </div>
+                        <div class="flex items-center p-2">
+                            <input type="checkbox" id="column-recommendation" checked class="mr-2">
+                            <label for="column-recommendation">Ajánlás</label>
+                        </div>
+                        <div class="flex items-center p-2">
+                            <input type="checkbox" id="column-actions" checked class="mr-2">
+                            <label for="column-actions">Műveletek</label>
+                        </div>
+                        <div class="flex items-center p-2">
+                            <input type="checkbox" id="column-note" checked class="mr-2">
+                            <label for="column-note">Megjegyzés</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Táblázat -->
+        <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
             <table id="foodTable" class="w-full bg-gray-800 shadow-md rounded-lg">
-                <thead>
-                    <tr class="bg-blue-700 text-gray-100">
-                        <th class="p-3 text-left">Megnevezés</th>
-                        <th class="p-3 text-left">Étel csoport</th>
-                        <th class="p-3 text-left">Ajánlás</th>
+                <thead class="sticky top-0 bg-blue-700 text-gray-100 z-10">
+                    <tr>
+                        <th class="p-2 text-left cursor-pointer column-name" data-sort="name">Megnevezés <span class="sort-icon"></span></th>
+                        <th class="p-2 text-left cursor-pointer column-group" data-sort="group">Étel csoport <span class="sort-icon"></span></th>
+                        <th class="p-2 text-left cursor-pointer w-48 whitespace-nowrap column-recommendation" data-sort="recommendation">Ajánlás <span class="sort-icon"></span></th>
+                        <th class="p-2 text-left column-note">Megjegyzés</th>
+                        <th class="p-2 text-left column-actions">Műveletek</th>
                     </tr>
                 </thead>
                 <tbody id="foodTableBody"></tbody>
             </table>
-            <div id="errorMessage" class="text-red-500 text-center mt-4 hidden">
-                Hiba történt az adatok betöltése közben. Kérlek, próbáld újra!
-            </div>
         </div>
     </div>
 
     <script>
-        const foodData = [
-            {name: "Áfonya", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
-            {name: "Agvé", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Ajóka", group: "Halak", recommendation: "IGEN Kérek"},
-            {name: "Alakor (eink09", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Alaszkai lapohal", group: "Halak", recommendation: "IGEN Kérek"},
-            {name: "Alaszkai lazac", group: "Halak", recommendation: "IGEN Kérek"},
-            {name: "Alga olaj", group: "Olajok", recommendation: "IGEN Kérek"},
-            {name: "Alma", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
-            {name: "Amerikai kelkáposzta", group: "Zöldségek keresztesviráguak", recommendation: "IGEN Kérek"},
-            {name: "Árpa", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Árpa (nem lehet kuktában főzni)", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Articsóka", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
-            {name: "Avokádó", group: "Gyümölcsök korlátlanul", recommendation: "IGEN Kérek"},
-            {name: "Baobab (majomkenyérfa gyümölcs)", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
-            {name: "Barack", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
-            {name: "Bárány", group: "Hús legelőn nevelt 110gr", recommendation: "IGEN Kérek"},
-            {name: "Barna rizs", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Berly Breadtól Julian Bakery Paleo", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
-            {name: "Bivaly mozzarella", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
-            {name: "Bivaly vaj", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
-            {name: "Bor", group: "Bor (napi 2dl Vörös)", recommendation: "IGEN Kérek"},
-            {name: "Borsó", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Bölény", group: "Hús legelőn nevelt 110gr", recommendation: "IGEN Kérek"},
-            {name: "Brazil dió (korlátozott meny.)", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
-            {name: "Brokkoli", group: "Zöldségek keresztesviráguak", recommendation: "IGEN Kérek"},
-            {name: "Bulgur", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Burgonya Burgonya csipsz", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Búza Sweet n Low (szaharin)", group: "Pszeudo-gabonák kuktában főzés sem távolítja el a lektineket", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Buzafű", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Capello s fettuccine tészta", group: "\"Foodles elfogadható tészták\"", recommendation: "IGEN Kérek"},
-            {name: "Cékla Nyers", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
-            {name: "Chiamag", group: "Diófélék és Magok", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Chilipaprika", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Cikória", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
-            {name: "Cikória gyökérből inulin", group: "Édesítők", recommendation: "IGEN Kérek"},
-            {name: "Citrusfélék nem léformában", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
-            {name: "Cukkini", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Cukor", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Cukorborsó", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Csicseriborsó", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Csíráztatott Gabonák", group: "Pszeudo-gabonák kuktában főzés sem távolítja el a lektineket", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Csirke", group: "Szabadtartású 200gr Nem szabadtartású 110gr/nap", recommendation: "IGEN Kérek"},
-            {name: "Csodatészta", group: "\"Foodles elfogadható tészták\"", recommendation: "IGEN Kérek"},
-            {name: "Datolya", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
-            {name: "DatolyaszilvaűJicama", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
-            {name: "Dinnyefélék az összes", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Dió", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
-            {name: "Dióolaj", group: "Olajok", recommendation: "IGEN Kérek"},
-            {name: "Ecetek", group: "Ecetek mind (hozzáadott cukor nélkül", recommendation: "IGEN Kérek"},
-            {name: "Édesburgony", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
-            {name: "Edesburgonya Liszt", group: "Lisztek", recommendation: "IGEN Kérek"},
-            {name: "Eper", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
-            {name: "Eritrit (ologoszacharidokat is tartalmaz)", group: "Édesítők", recommendation: "IGEN Kérek"},
-            {name: "Étcsokoládé", group: "90%-os 30g naponta", recommendation: "IGEN Kérek"},
-            {name: "Fácán Nyirfad Galamb Fürj", group: "Szabadtartású 200gr Nem szabadtartású 110gr/nap", recommendation: "IGEN Kérek"},
-            {name: "Fagyasztott joghurt", group: "Nem dél-Európai tehéntej termékek kazein A-1-et tartalmaznak", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Fagylalt", group: "Nem dél-Európai tehéntej termékek kazein A-1-et tartalmaznak", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Fagylalt fagyasztott deszertek", group: "Fagylalt Tejtermék mentes", recommendation: "IGEN Kérek"},
-            {name: "Farcia vagy Olasz vaj", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
-            {name: "Fehér rizs", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Fehérrépa", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
-            {name: "Fenyőmag (korlátozott meny)", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
-            {name: "Fésűkagyló", group: "Halak", recommendation: "IGEN Kérek"},
-            {name: "Fokhagyma", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
-            {name: "Földimogyoró", group: "Diófélék és Magok", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Földimogyoró olaj", group: "Olajok", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Füge", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
-            {name: "Fügekaktuszok", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
-            {name: "Garnéla rák", group: "Halak", recommendation: "IGEN Kérek"},
-            {name: "Gesztenye", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
-            {name: "Ghi", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
-            {name: "Glucoannan (konjac gyökér ördögnyelv)", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
-            {name: "Gojibogyó", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Gombák", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
-            {name: "Gránátalma", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
-            {name: "Gyógynövények", group: "Mind kivéve chilipehely Misszió", recommendation: "IGEN Kérek"},
-            {name: "Hagyma", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
-            {name: "Hajdina", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Hawaii hal", group: "Halak", recommendation: "IGEN Kérek"},
-            {name: "Homár", group: "Halak", recommendation: "IGEN Kérek"},
-            {name: "Hüvelyesek", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Inulin", group: "Édesítők", recommendation: "IGEN Kérek"},
-            {name: "Ízesített csukamájola", group: "Olajok", recommendation: "IGEN Kérek"},
-            {name: "Jávorszarvas", group: "Hús legelőn nevelt 110gr", recommendation: "IGEN Kérek"},
-            {name: "Jégcsapretek", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
-            {name: "Jeruzsálemi articsóka", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
-            {name: "Joghurt Görög joghurt is", group: "Nem dél-Európai tehéntej termékek kazein A-1-et tartalmaznak", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Just Like Sugar", group: "Édesítők", recommendation: "IGEN Kérek"},
-            {name: "Kacsa", group: "Szabadtartású 200gr Nem szabadtartású 110gr/nap", recommendation: "IGEN Kérek"},
-            {name: "Kagyló", group: "Halak", recommendation: "IGEN Kérek"},
-            {name: "Kajszibarack", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
-            {name: "Kamut", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Kanten tészta", group: "\"Foodles elfogadható tészták\"", recommendation: "IGEN Kérek"},
-            {name: "Karfiol", group: "Zöldségek keresztesviráguak", recommendation: "IGEN Kérek"},
-            {name: "Kashi", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Kasszava (tápióka)", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
-            {name: "Kasszavai Liszt", group: "Lisztek", recommendation: "IGEN Kérek"},
-            {name: "Kazein A-2-es tej csk tejszinként", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
-            {name: "Kecske- és Juhkefir", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
-            {name: "Kecskejoghurt", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
-            {name: "Kecsketej Kecskesajt", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
-            {name: "Kefires Gabonák", group: "Pszeudo-gabonák kuktában főzés sem távolítja el a lektineket", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Kék kagyló", group: "Halak", recommendation: "IGEN Kérek"},
-            {name: "Kekszek", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Kelbimbó", group: "Zöldségek keresztesviráguak", recommendation: "IGEN Kérek"},
-            {name: "KelkáposztaűFehér és Vörös káposzta", group: "Zöldségek keresztesviráguak", recommendation: "IGEN Kérek"},
-            {name: "Kender ferfhérje por", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
-            {name: "Kendermag", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
-            {name: "Kenyér", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Kenyér és bagettek", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
-            {name: "Kesudió", group: "Diófélék és Magok", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Kimcsi", group: "Zöldségek keresztesviráguak", recommendation: "IGEN Kérek"},
-            {name: "Kivi", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
-            {name: "Kókusz Fagylalt max 1gr cukor", group: "Fagylalt", recommendation: "IGEN Kérek"},
-            {name: "Kókusz Liszt", group: "Lisztek", recommendation: "IGEN Kérek"},
-            {name: "Kokuszdió Nem kókusz víz", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
-            {name: "Kókuszjoghurt", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
-            {name: "Kókuszlisztes műzli", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
-            {name: "Kókusztej Édesítetlen tejtermékpótló", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
-            {name: "Kókusztejszin édesítetlen", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
-            {name: "Konzerv tonhal", group: "Halak", recommendation: "IGEN Kérek"},
-            {name: "Koriander", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
-            {name: "Köles Cirok", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
-            {name: "Kukorica", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Kukorica keményítő", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Kukorica olaj", group: "Olajok", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Kukorica szirup", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Kukoricás termékek", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Lenmag", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
-            {name: "Liba", group: "Szabadtartású 200gr Nem szabadtartású 110gr/nap", recommendation: "IGEN Kérek"},
-            {name: "Light italok", group: "Pszeudo-gabonák kuktában főzés sem távolítja el a lektineket", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Liszt", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Luo hanguo (Nutresse márka jó)", group: "Édesítők", recommendation: "IGEN Kérek"},
-            {name: "Makadámdiò-olaj", group: "Olajok", recommendation: "IGEN Kérek"},
-            {name: "Makadámdió", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
-            {name: "Málna", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
-            {name: "Maltodextrin", group: "Pszeudo-gabonák kuktában főzés sem távolítja el a lektineket", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Mandula Liszt", group: "Lisztek", recommendation: "IGEN Kérek"},
-            {name: "Mángold", group: "Zöldségek keresztesviráguak", recommendation: "IGEN Kérek"},
-            {name: "Maréna Édesvizi sügér", group: "Bármilyen vadon fogott hal 60-120gr", recommendation: "IGEN Kérek"},
-            {name: "Marhahús", group: "Hús legelőn nevelt 110gr", recommendation: "IGEN Kérek"},
-            {name: "Meggy", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
-            {name: "Minden babféle a csírák is", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Minden lencse", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Mogyoró", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
-            {name: "Mogyoró Liszt", group: "Lisztek", recommendation: "IGEN Kérek"},
-            {name: "Mogyoróhagyma", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
-            {name: "Műzli", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Napa káposztaűKínai kel", group: "Zöldségek keresztesviráguak", recommendation: "IGEN Kérek"},
-            {name: "Napraforgó olaj", group: "Olajok", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Napraforgómag", group: "Diófélék és Magok", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Nektarin", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
-            {name: "Nutraweet (aszpartan)", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Nyers savanyú káposzta", group: "Zöldségek keresztesviráguak", recommendation: "IGEN Kérek"},
-            {name: "Nyilgyökér Liszt", group: "Lisztek", recommendation: "IGEN Kérek"},
-            {name: "OkraűSpárga", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
-            {name: "Olajok", group: "Olajok", recommendation: "IGEN Kérek"},
-            {name: "Olíva olaj", group: "Olajok", recommendation: "IGEN Kérek"},
-            {name: "Organikus sajtkrém", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
-            {name: "Organikus tejföl", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
-            {name: "Organikus tejszin", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
-            {name: "Osztriga", group: "Halak", recommendation: "IGEN Kérek"},
-            {name: "Padlizsán", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Pakchoi", group: "Zöldségek keresztesviráguak", recommendation: "IGEN Kérek"},
-            {name: "Pálmaszív", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
-            {name: "Pamutmag olaj", group: "Olajok", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Paprika", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Paradicsom", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Parmigiano-Reggiano", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
-            {name: "Pasta Slim tészta", group: "\"Foodles elfogadható tészták\"", recommendation: "IGEN Kérek"},
-            {name: "PaszternákűJukka", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
-            {name: "Pattogatott kukorica", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "PekánDió", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
-            {name: "Perilla olaj", group: "Olajok", recommendation: "IGEN Kérek"},
-            {name: "Pisztácia", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
-            {name: "Póréhagyma", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
-            {name: "Pórsáfrány olaj", group: "Olajok", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Prosciutto", group: "Hús legelőn nevelt 110gr", recommendation: "IGEN Kérek"},
-            {name: "Pulyka", group: "Szabadtartású 200gr Nem szabadtartású 110gr/nap", recommendation: "IGEN Kérek"},
-            {name: "Quinoa", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Rágcsálnivalók", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Rák", group: "Halak", recommendation: "IGEN Kérek"},
-            {name: "Ratabaga", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
-            {name: "Répa", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
-            {name: "Repce olaj", group: "Olajok", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Retek", group: "Zöldségek keresztesviráguak", recommendation: "IGEN Kérek"},
-            {name: "Rizs", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Rizskorpa olaj", group: "Olajok", recommendation: "IGEN Kérek"},
-            {name: "Ropogós Körte (Anjou bosc comice)", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
-            {name: "Rozs (nem lehet kuktában főzni)", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Röviditalok", group: "Röviditalok (napi 15ml)", recommendation: "IGEN Kérek"},
-            {name: "Rukola", group: "Zöldségek keresztesviráguak", recommendation: "IGEN Kérek"},
-            {name: "Sajt Rikotta Túró", group: "Nem dél-Európai tehéntej termékek kazein A-1-et tartalmaznak", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Savófehérje por", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
-            {name: "Sertéshús emberséggel nevelt", group: "Hús legelőn nevelt 110gr", recommendation: "IGEN Kérek"},
-            {name: "Shirataki tészta", group: "\"Foodles elfogadható tészták\"", recommendation: "IGEN Kérek"},
-            {name: "Siete márkájú tortilla, kaszava", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
-            {name: "Splenda (szukralóz)", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Strucc", group: "Szabadtartású 200gr Nem szabadtartású 110gr/nap", recommendation: "IGEN Kérek"},
-            {name: "Sütemények", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Sütőtök", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Svájci sajto", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
-            {name: "Swett One Sunett (aceszulfát K)", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Szabadtartású vagy omega3 tojás max 4db", group: "Szabadtartású 200gr Nem szabadtartású 110gr/nap", recommendation: "IGEN Kérek"},
-            {name: "Szardinia", group: "Halak", recommendation: "IGEN Kérek"},
-            {name: "Szerzetesek körtéje", group: "Édesítők", recommendation: "IGEN Kérek"},
-            {name: "Szezám mag", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
-            {name: "Szezám olaj", group: "Olajok", recommendation: "IGEN Kérek"},
-            {name: "Szilva", group: "Gyümölcsök Mindet korlátozottan", recommendation: "IGEN Kérek"},
-            {name: "Szója", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Szója olaj", group: "Olajok", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Szójafehérje", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Szőlőmag Liszt", group: "Lisztek", recommendation: "IGEN Kérek"},
-            {name: "Szőlőmag olaj", group: "Olajok", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Sztívia", group: "Édesítők", recommendation: "IGEN Kérek"},
-            {name: "Tarógyökér", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
-            {name: "Tej", group: "Nem dél-Európai tehéntej termékek kazein A-1-et tartalmaznak", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Tengeri hínár tészta", group: "\"Foodles elfogadható tészták\"", recommendation: "IGEN Kérek"},
-            {name: "Tészta", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Textúrált zöldségfehérje", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Tigrismogyoró", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
-            {name: "Tigrismogyoró Liszt", group: "Lisztek", recommendation: "IGEN Kérek"},
-            {name: "Tintahal", group: "Halak", recommendation: "IGEN Kérek"},
-            {name: "Tofu", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Tortilla", group: "Finomított keményítőt tartalmazó ételek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Tökféle az összes", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Tökmag", group: "Diófélék és Magok", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Tönkölybúza", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Uborka", group: "Gyümölcsök néhányat zöldségnek tartunk", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Útifűmag", group: "Diófélék és Magok Napi 1/2 Bögre", recommendation: "IGEN Kérek"},
-            {name: "Vad rizy", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Vaddisznó", group: "Hús legelőn nevelt 110gr", recommendation: "IGEN Kérek"},
-            {name: "Vadhús", group: "Hús legelőn nevelt 110gr", recommendation: "IGEN Kérek"},
-            {name: "Valódi parmezán", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"},
-            {name: "Vizitorma", group: "Zöldségek keresztesviráguak", recommendation: "IGEN Kérek"},
-            {name: "Vöröspálma-olaj", group: "Olajok", recommendation: "IGEN Kérek"},
-            {name: "Wrap (kókuszlisztből)", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
-            {name: "Xilit", group: "Édesítők", recommendation: "IGEN Kérek"},
-            {name: "Yacon Mexikói jamgyökér", group: "Édesítők", recommendation: "IGEN Kérek"},
-            {name: "Zab (nem lehet kuktában főzni)", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Zeller", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
-            {name: "Zellergyökér", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
-            {name: "Zöld banán főzőbanán", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
-            {name: "Zöld banán Liszt", group: "Lisztek", recommendation: "IGEN Kérek"},
-            {name: "Zöld mangó és papaja", group: "Ellenálló keményítők módjával Kókuszlisztből vagy mandula lisztből", recommendation: "IGEN Kérek"},
-            {name: "Zöld szójabab", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Zöldbab", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Zöldboró fehérje", group: "Zöldségek", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Zöldség olaj", group: "Olajok", recommendation: "KÖSZÖNÖM NEMKÉREK"},
-            {name: "Zöldségzöldje", group: "Egyéb zöldségfélék", recommendation: "IGEN Kérek"},
-            {name: "Zsíros Francia Olasz sajtok", group: "Tejtermékek 300 gr.Sajt vagy joghurt naponta", recommendation: "IGEN Kérek"}
-        ];
+        let currentData = []; // Kezdetben üres, majd betöltjük a localStorage-ból vagy a beágyazott adatokból
+        let editingName = null; // Nyomon követi, hogy melyik sor van szerkesztési módban (a name mező alapján)
+        let sortConfig = { key: 'name', direction: 'asc' }; // Alapértelmezett rendezés: Megnevezés szerint, növekvő sorrendben
+        let draggedRow = null; // Nyomon követi az éppen áthúzott sort
+        let columnVisibility = {
+            'column-name': true,
+            'column-group': true,
+            'column-recommendation': true,
+            'column-actions': true,
+            'column-note': true
+        }; // Oszlopok láthatóságának állapota
+
+        // localStorage kulcsok
+        const foodDataKey = 'foodData';
+        const columnVisibilityKey = 'columnVisibility';
+
+        // Ide illeszd be a foodData.json tartalmát az alábbi formátumban:
+        // const initialFoodData = [ ...foodData.json tartalma... ];
+        // Példa:
+        // const initialFoodData = [
+        //     {"name": "Áfonya", "group": "Gyümölcsök", "recommendation": "IGEN Kérek", "note": "Csak szezonálisan, kis mennyiségben fogyassza"},
+        //     {"name": "Agvé", "group": "Finomított keményítőt tartalmazó ételek", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+        //     ...többi adat...
+        // ];
+        const initialFoodData = [
+    {"name": "Áfonya", "group": "Gyümölcsök", "recommendation": "IGEN Kérek", "note": "Csak szezonálisan, kis mennyiségben fogyassza"},
+    {"name": "Agvé", "group": "Finomított keményítőt tartalmazó ételek", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Ajóka", "group": "Halak", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Alakor (einkorn búza)", "group": "Pszeudo-gabonák", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Alaszkai laposhal", "group": "Halak", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Alaszkai lazac", "group": "Halak", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Alga olaj", "group": "Olajok", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Alma", "group": "Gyümölcsök", "recommendation": "IGEN Kérek", "note": "Csak szezonálisan, kis mennyiségben fogyassza"},
+    {"name": "Amerikai kelkáposzta", "group": "Zöldségek (keresztesvirágúak)", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Árpa", "group": "Pszeudo-gabonák", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Árpa (nem lehet kuktában főzni)", "group": "Pszeudo-gabonák", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Articsóka", "group": "Zöldségek", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Avokádó", "group": "Gyümölcsök", "recommendation": "IGEN Kérek", "note": "Korlátozás nélkül fogyasztható"},
+    {"name": "Baobab (majomkenyérfa gyümölcs)", "group": "Ellenálló keményítők", "recommendation": "IGEN Kérek", "note": "Módjával fogyassza"},
+    {"name": "Barack", "group": "Gyümölcsök", "recommendation": "IGEN Kérek", "note": "Csak szezonálisan, kis mennyiségben fogyassza"},
+    {"name": "Bárány", "group": "Hús (legelőn nevelt)", "recommendation": "IGEN Kérek", "note": "Napi 110 g mennyiségben ajánlott"},
+    {"name": "Barna rizs", "group": "Pszeudo-gabonák", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Berly Breadtól Julian Bakery Paleo", "group": "Ellenálló keményítők", "recommendation": "IGEN Kérek", "note": "Módjával fogyassza"},
+    {"name": "Bivaly mozzarella", "group": "Tejtermékek", "recommendation": "IGEN Kérek", "note": "Napi 300 g mennyiségben ajánlott"},
+    {"name": "Bivaly vaj", "group": "Tejtermékek", "recommendation": "IGEN Kérek", "note": "Napi 300 g mennyiségben ajánlott"},
+    {"name": "Bor", "group": "Bor", "recommendation": "IGEN Kérek", "note": "Napi 2 dl vörösbor ajánlott"},
+    {"name": "Borsó", "group": "Zöldségek (lektintartalmúak)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": "Vegánok és vegetáriánusok a 2. fázisban kuktában főzve fogyaszthatják"},
+    {"name": "Bölény", "group": "Hús (legelőn nevelt)", "recommendation": "IGEN Kérek", "note": "Napi 110 g mennyiségben ajánlott"},
+    {"name": "Brazil dió (korlátozott meny.)", "group": "Diófélék és Magok", "recommendation": "IGEN Kérek", "note": "Napi 1/2 bögre mennyiségben ajánlott, korlátozott mennyiségben"},
+    {"name": "Brokkoli", "group": "Zöldségek (keresztesvirágúak)", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Bulgur", "group": "Pszeudo-gabonák", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Burgonya Burgonya csipsz", "group": "Zöldségek (lektintartalmúak)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Búza Sweet n Low (szaharin)", "group": "Pszeudo-gabonák", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Búzafű", "group": "Pszeudo-gabonák", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Capello s fettuccine tészta", "group": "Tészták (elfogadható)", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Cékla Nyers", "group": "Zöldségek", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Chiamag", "group": "Diófélék és Magok", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Chilipaprika", "group": "Gyümölcsök (botanikailag)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Cikória", "group": "Zöldségek", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Cikória gyökérből inulin", "group": "Édesítők", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Citrusfélék nem léformában", "group": "Gyümölcsök", "recommendation": "IGEN Kérek", "note": "Csak szezonálisan, kis mennyiségben fogyassza, nem lé formában"},
+    {"name": "Cukkini", "group": "Gyümölcsök (botanikailag)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Cukor", "group": "Finomított keményítőt tartalmazó ételek", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Cukorborsó", "group": "Zöldségek (lektintartalmúak)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": "Vegánok és vegetáriánusok a 2. fázisban kuktában főzve fogyaszthatják"},
+    {"name": "Csicseriborsó", "group": "Zöldségek (lektintartalmúak)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": "Vegánok és vegetáriánusok a 2. fázisban kuktában főzve fogyaszthatják"},
+    {"name": "Csíráztatott Gabonák", "group": "Pszeudo-gabonák", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Csirke", "group": "Hús (szabadtartású)", "recommendation": "IGEN Kérek", "note": "Szabadtartású: 200 g/nap, nem szabadtartású: 110 g/nap"},
+    {"name": "Csodatészta", "group": "Tészták (elfogadható)", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Datolya", "group": "Gyümölcsök", "recommendation": "IGEN Kérek", "note": "Csak szezonálisan, kis mennyiségben fogyassza"},
+    {"name": "DatolyaszilvaűJicama", "group": "Ellenálló keményítők", "recommendation": "IGEN Kérek", "note": "Módjával fogyassza"},
+    {"name": "Dinnyefélék az összes", "group": "Gyümölcsök (botanikailag)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Dió", "group": "Diófélék és Magok", "recommendation": "IGEN Kérek", "note": "Napi 1/2 bögre mennyiségben ajánlott"},
+    {"name": "Dióolaj", "group": "Olajok", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Ecetek", "group": "Ecetek", "recommendation": "IGEN Kérek", "note": "Hozzáadott cukor nélkül"},
+    {"name": "Édesburgonya", "group": "Ellenálló keményítők", "recommendation": "IGEN Kérek", "note": "Módjával fogyassza"},
+    {"name": "Édesburgonya Liszt", "group": "Lisztek", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Eper", "group": "Gyümölcsök", "recommendation": "IGEN Kérek", "note": "Csak szezonálisan, kis mennyiségben fogyassza"},
+    {"name": "Eritrit (oligoszacharidokat is tartalmaz)", "group": "Édesítők", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Étcsokoládé", "group": "Étcsokoládé", "recommendation": "IGEN Kérek", "note": "90%-os, napi 30 g mennyiségben ajánlott"},
+    {"name": "Fácán Nyírfad Galamb Fürj", "group": "Hús (szabadtartású)", "recommendation": "IGEN Kérek", "note": "Szabadtartású: 200 g/nap, nem szabadtartású: 110 g/nap"},
+    {"name": "Fagyasztott joghurt", "group": "Tejtermékek (kerülendő)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": "Kazein A-1-et tartalmaz"},
+    {"name": "Fagylalt", "group": "Tejtermékek (kerülendő)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": "Kazein A-1-et tartalmaz"},
+    {"name": "Fagylalt fagyasztott desszertek", "group": "Fagylalt (tejtermék mentes)", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Farcia vagy Olasz vaj", "group": "Tejtermékek", "recommendation": "IGEN Kérek", "note": "Napi 300 g mennyiségben ajánlott"},
+    {"name": "Fehér rizs", "group": "Pszeudo-gabonák", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Fehérrépa", "group": "Ellenálló keményítők", "recommendation": "IGEN Kérek", "note": "Módjával fogyassza"},
+    {"name": "Fenyőmag (korlátozott meny)", "group": "Diófélék és Magok", "recommendation": "IGEN Kérek", "note": "Napi 1/2 bögre mennyiségben ajánlott, korlátozott mennyiségben"},
+    {"name": "Fésűkagyló", "group": "Halak", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Fokhagyma", "group": "Zöldségek", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Földimogyoró", "group": "Zöldségek (lektintartalmúak)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": "Vegánok és vegetáriánusok a 2. fázisban kuktában főzve fogyaszthatják"},
+    {"name": "Földimogyoró olaj", "group": "Olajok", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Füge", "group": "Gyümölcsök", "recommendation": "IGEN Kérek", "note": "Csak szezonálisan, kis mennyiségben fogyassza"},
+    {"name": "Fügekaktuszok", "group": "Zöldségek", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Garnéla rák", "group": "Halak", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Gesztenye", "group": "Diófélék és Magok", "recommendation": "IGEN Kérek", "note": "Napi 1/2 bögre mennyiségben ajánlott"},
+    {"name": "Ghi", "group": "Tejtermékek", "recommendation": "IGEN Kérek", "note": "Napi 300 g mennyiségben ajánlott"},
+    {"name": "Glucoannan (konjac gyökér ördögnyelv)", "group": "Ellenálló keményítők", "recommendation": "IGEN Kérek", "note": "Módjával fogyassza"},
+    {"name": "Gojibogyó", "group": "Gyümölcsök (botanikailag)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Gombák", "group": "Zöldségek", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Gránátalma", "group": "Gyümölcsök", "recommendation": "IGEN Kérek", "note": "Csak szezonálisan, kis mennyiségben fogyassza"},
+    {"name": "Gyógynövények", "group": "Mind kivéve chilipehely Misszió", "recommendation": "IGEN Kérek", "note": "Chilipehely kivételével"},
+    {"name": "Hagyma", "group": "Zöldségek", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Hajdina", "group": "Pszeudo-gabonák", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Hawaii hal", "group": "Halak", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Homár", "group": "Halak", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Hüvelyesek", "group": "Zöldségek (lektintartalmúak)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": "Vegánok és vegetáriánusok a 2. fázisban kuktában főzve fogyaszthatják"},
+    {"name": "Inulin", "group": "Édesítők", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Ízesített csukamájolaj", "group": "Olajok", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Jávorszarvas", "group": "Hús (legelőn nevelt)", "recommendation": "IGEN Kérek", "note": "Napi 110 g mennyiségben ajánlott"},
+    {"name": "Jégcsapretek", "group": "Zöldségek", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Jeruzsálemi articsóka", "group": "Zöldségek", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Joghurt Görög joghurt is", "group": "Tejtermékek (kerülendő)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": "Kazein A-1-et tartalmaz"},
+    {"name": "Just Like Sugar", "group": "Édesítők", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Kacsa", "group": "Hús (szabadtartású)", "recommendation": "IGEN Kérek", "note": "Szabadtartású: 200 g/nap, nem szabadtartású: 110 g/nap"},
+    {"name": "Kagyló", "group": "Halak", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Kajszibarack", "group": "Gyümölcsök", "recommendation": "IGEN Kérek", "note": "Csak szezonálisan, kis mennyiségben fogyassza"},
+    {"name": "Kamut", "group": "Pszeudo-gabonák", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Kanten tészta", "group": "Tészták (elfogadható)", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Karfiol", "group": "Zöldségek (keresztesvirágúak)", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Kashi", "group": "Pszeudo-gabonák", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Kasszava (tápióka)", "group": "Ellenálló keményítők", "recommendation": "IGEN Kérek", "note": "Módjával fogyassza"},
+    {"name": "Kasszava Liszt", "group": "Lisztek", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Kazein A-2-es tej csak tejszínként", "group": "Tejtermékek", "recommendation": "IGEN Kérek", "note": "Napi 300 g mennyiségben ajánlott, csak tejszínként"},
+    {"name": "Kecske- és Juhkefir", "group": "Tejtermékek", "recommendation": "IGEN Kérek", "note": "Napi 300 g mennyiségben ajánlott"},
+    {"name": "Kecskesjoghurt", "group": "Tejtermékek", "recommendation": "IGEN Kérek", "note": "Napi 300 g mennyiségben ajánlott"},
+    {"name": "Kecsketej Kecskesajt", "group": "Tejtermékek", "recommendation": "IGEN Kérek", "note": "Napi 300 g mennyiségben ajánlott"},
+    {"name": "Kefires Gabonák", "group": "Pszeudo-gabonák", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Kék kagyló", "group": "Halak", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Kekszek", "group": "Finomított keményítőt tartalmazó ételek", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Kelbimbó", "group": "Zöldségek (keresztesvirágúak)", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "KelkáposztaűFehér és Vörös káposzta", "group": "Zöldségek (keresztesvirágúak)", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Kender fehérje por", "group": "Diófélék és Magok", "recommendation": "IGEN Kérek", "note": "Napi 1/2 bögre mennyiségben ajánlott"},
+    {"name": "Kendermag", "group": "Diófélék és Magok", "recommendation": "IGEN Kérek", "note": "Napi 1/2 bögre mennyiségben ajánlott"},
+    {"name": "Kenyér", "group": "Finomított keményítőt tartalmazó ételek", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Kenyér és bagettek", "group": "Ellenálló keményítők", "recommendation": "IGEN Kérek", "note": "Módjával fogyassza"},
+    {"name": "Kesudió", "group": "Diófélék és Magok", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Kimcsi", "group": "Zöldségek (keresztesvirágúak)", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Kivi", "group": "Gyümölcsök", "recommendation": "IGEN Kérek", "note": "Csak szezonálisan, kis mennyiségben fogyassza"},
+    {"name": "Kókusz Fagylalt max 1gr cukor", "group": "Fagylalt", "recommendation": "IGEN Kérek", "note": "Maximum 1 g cukor tartalommal"},
+    {"name": "Kókusz Liszt", "group": "Lisztek", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Kókuszdió Nem kókusz víz", "group": "Diófélék és Magok", "recommendation": "IGEN Kérek", "note": "Napi 1/2 bögre mennyiségben ajánlott, kókuszvíz nem ajánlott"},
+    {"name": "Kókuszjoghurt", "group": "Tejtermékek", "recommendation": "IGEN Kérek", "note": "Napi 300 g mennyiségben ajánlott"},
+    {"name": "Kókuszlisztes müzli", "group": "Ellenálló keményítők", "recommendation": "IGEN Kérek", "note": "Módjával fogyassza"},
+    {"name": "Kókusztej Édesítetlen tejtermékpótló", "group": "Diófélék és Magok", "recommendation": "IGEN Kérek", "note": "Napi 1/2 bögre mennyiségben ajánlott, édesítetlen"},
+    {"name": "Kókusztejszín édesítetlen", "group": "Diófélék és Magok", "recommendation": "IGEN Kérek", "note": "Napi 1/2 bögre mennyiségben ajánlott, édesítetlen"},
+    {"name": "Konzerv tonhal", "group": "Halak", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Koriander", "group": "Zöldségek", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Köles Cirok", "group": "Pszeudo-gabonák", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Kukorica", "group": "Pszeudo-gabonák", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Kukorica keményítő", "group": "Pszeudo-gabonák", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Kukorica olaj", "group": "Olajok", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Kukorica szirup", "group": "Pszeudo-gabonák", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Kukoricás termékek", "group": "Pszeudo-gabonák", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Lenmag", "group": "Diófélék és Magok", "recommendation": "IGEN Kérek", "note": "Napi 1/2 bögre mennyiségben ajánlott"},
+    {"name": "Liba", "group": "Hús (szabadtartású)", "recommendation": "IGEN Kérek", "note": "Szabadtartású: 200 g/nap, nem szabadtartású: 110 g/nap"},
+    {"name": "Light italok", "group": "Finomított keményítőt tartalmazó ételek", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Liszt", "group": "Finomított keményítőt tartalmazó ételek", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Luo hanguo (Nutresse márka jó)", "group": "Édesítők", "recommendation": "IGEN Kérek", "note": "Nutresse márka ajánlott"},
+    {"name": "Makadámdió-olaj", "group": "Olajok", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Makadámdió", "group": "Diófélék és Magok", "recommendation": "IGEN Kérek", "note": "Napi 1/2 bögre mennyiségben ajánlott"},
+    {"name": "Málna", "group": "Gyümölcsök", "recommendation": "IGEN Kérek", "note": "Csak szezonálisan, kis mennyiségben fogyassza"},
+    {"name": "Maltodextrin", "group": "Finomított keményítőt tartalmazó ételek", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Mandula Liszt", "group": "Lisztek", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Mángold", "group": "Zöldségek (keresztesvirágúak)", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Maréna Édesvízi sügér", "group": "Halak", "recommendation": "IGEN Kérek", "note": "Napi 60-120 g mennyiségben ajánlott"},
+    {"name": "Marhahús", "group": "Hús (legelőn nevelt)", "recommendation": "IGEN Kérek", "note": "Napi 110 g mennyiségben ajánlott"},
+    {"name": "Meggy", "group": "Gyümölcsök", "recommendation": "IGEN Kérek", "note": "Csak szezonálisan, kis mennyiségben fogyassza"},
+    {"name": "Minden babféle a csírák is", "group": "Zöldségek (lektintartalmúak)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": "Vegánok és vegetáriánusok a 2. fázisban kuktában főzve fogyaszthatják"},
+    {"name": "Minden lencse", "group": "Zöldségek (lektintartalmúak)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": "Vegánok és vegetáriánusok a 2. fázisban kuktában főzve fogyaszthatják"},
+    {"name": "Mogyoró", "group": "Diófélék és Magok", "recommendation": "IGEN Kérek", "note": "Napi 1/2 bögre mennyiségben ajánlott"},
+    {"name": "Mogyoró Liszt", "group": "Lisztek", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Mogyoróhagyma", "group": "Zöldségek", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Müzli", "group": "Finomított keményítőt tartalmazó ételek", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Napa káposztaűKínai kel", "group": "Zöldségek (keresztesvirágúak)", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Napraforgó olaj", "group": "Olajok", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Napraforgómag", "group": "Diófélék és Magok", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Nektarin", "group": "Gyümölcsök", "recommendation": "IGEN Kérek", "note": "Csak szezonálisan, kis mennyiségben fogyassza"},
+    {"name": "Nutraweet (aszpartan)", "group": "Finomított keményítőt tartalmazó ételek", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Nyers savanyú káposzta", "group": "Zöldségek (keresztesvirágúak)", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Nyílgyökér Liszt", "group": "Lisztek", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "OkraűSpárga", "group": "Zöldségek", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Olajok", "group": "Olajok", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Olíva olaj", "group": "Olajok", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Organikus sajtkrém", "group": "Tejtermékek", "recommendation": "IGEN Kérek", "note": "Napi 300 g mennyiségben ajánlott"},
+    {"name": "Organikus tejföl", "group": "Tejtermékek", "recommendation": "IGEN Kérek", "note": "Napi 300 g mennyiségben ajánlott"},
+    {"name": "Organikus tejszín", "group": "Tejtermékek", "recommendation": "IGEN Kérek", "note": "Napi 300 g mennyiségben ajánlott"},
+    {"name": "Osztriga", "group": "Halak", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Padlizsán", "group": "Gyümölcsök (botanikailag)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Pakchoi", "group": "Zöldségek (keresztesvirágúak)", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Pálmaszív", "group": "Zöldségek", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Pamutmag olaj", "group": "Olajok", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Paprika", "group": "Gyümölcsök (botanikailag)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Paradicsom", "group": "Gyümölcsök (botanikailag)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Parmigiano-Reggiano", "group": "Tejtermékek", "recommendation": "IGEN Kérek", "note": "Napi 300 g mennyiségben ajánlott"},
+    {"name": "Pasta Slim tészta", "group": "Tészták (elfogadható)", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "PaszternákűJukka", "group": "Ellenálló keményítők", "recommendation": "IGEN Kérek", "note": "Módjával fogyassza"},
+    {"name": "Pattogatott kukorica", "group": "Pszeudo-gabonák", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Pekándió", "group": "Diófélék és Magok", "recommendation": "IGEN Kérek", "note": "Napi 1/2 bögre mennyiségben ajánlott"},
+    {"name": "Perilla olaj", "group": "Olajok", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Pisztácia", "group": "Diófélék és Magok", "recommendation": "IGEN Kérek", "note": "Napi 1/2 bögre mennyiségben ajánlott"},
+    {"name": "Póréhagyma", "group": "Zöldségek", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Pórsáfrány olaj", "group": "Olajok", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Prosciutto", "group": "Hús (legelőn nevelt)", "recommendation": "IGEN Kérek", "note": "Napi 110 g mennyiségben ajánlott"},
+    {"name": "Pulyka", "group": "Hús (szabadtartású)", "recommendation": "IGEN Kérek", "note": "Szabadtartású: 200 g/nap, nem szabadtartású: 110 g/nap"},
+    {"name": "Quinoa", "group": "Pszeudo-gabonák", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Rágcsálnivalók", "group": "Finomított keményítőt tartalmazó ételek", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Rák", "group": "Halak", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Ratabaga", "group": "Ellenálló keményítők", "recommendation": "IGEN Kérek", "note": "Módjával fogyassza"},
+    {"name": "Répa", "group": "Zöldségek", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Repce olaj", "group": "Olajok", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Retek", "group": "Zöldségek (keresztesvirágúak)", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Rizs", "group": "Pszeudo-gabonák", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Rizskorpa olaj", "group": "Olajok", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Ropogós Körte (Anjou bosc comice)", "group": "Gyümölcsök", "recommendation": "IGEN Kérek", "note": "Csak szezonálisan, kis mennyiségben fogyassza"},
+    {"name": "Rozs (nem lehet kuktában főzni)", "group": "Pszeudo-gabonák", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Röviditalok", "group": "Röviditalok", "recommendation": "IGEN Kérek", "note": "Napi 15 ml mennyiségben ajánlott"},
+    {"name": "Rukola", "group": "Zöldségek (keresztesvirágúak)", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Sajt Rikotta Túró", "group": "Tejtermékek (kerülendő)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": "Kazein A-1-et tartalmaz"},
+    {"name": "Savófehérje por", "group": "Tejtermékek", "recommendation": "IGEN Kérek", "note": "Napi 300 g mennyiségben ajánlott"},
+    {"name": "Sertéshús emberséggel nevelt", "group": "Hús (legelőn nevelt)", "recommendation": "IGEN Kérek", "note": "Napi 110 g mennyiségben ajánlott"},
+    {"name": "Shirataki tészta", "group": "Tészták (elfogadható)", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Siete márkájú tortilla, kaszava", "group": "Ellenálló keményítők", "recommendation": "IGEN Kérek", "note": "Módjával fogyassza"},
+    {"name": "Splenda (szukralóz)", "group": "Finomított keményítőt tartalmazó ételek", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Strucc", "group": "Hús (szabadtartású)", "recommendation": "IGEN Kérek", "note": "Szabadtartású: 200 g/nap, nem szabadtartású: 110 g/nap"},
+    {"name": "Sütemények", "group": "Finomított keményítőt tartalmazó ételek", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Sütőtök", "group": "Gyümölcsök (botanikailag)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Svájci sajt", "group": "Tejtermékek", "recommendation": "IGEN Kérek", "note": "Napi 300 g mennyiségben ajánlott"},
+    {"name": "Swett One Sunett (aceszulfát K)", "group": "Finomított keményítőt tartalmazó ételek", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Szabadtartású vagy omega3 tojás max 4db", "group": "Hús (szabadtartású)", "recommendation": "IGEN Kérek", "note": "Szabadtartású: 200 g/nap, nem szabadtartású: 110 g/nap, maximum 4 db"},
+    {"name": "Szardínia", "group": "Halak", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Szerzetesek körtéje", "group": "Édesítők", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Szezám mag", "group": "Diófélék és Magok", "recommendation": "IGEN Kérek", "note": "Napi 1/2 bögre mennyiségben ajánlott"},
+    {"name": "Szezám olaj", "group": "Olajok", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Szilva", "group": "Gyümölcsök", "recommendation": "IGEN Kérek", "note": "Csak szezonálisan, kis mennyiségben fogyassza"},
+    {"name": "Szója", "group": "Zöldségek (lektintartalmúak)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": "Vegánok és vegetáriánusok a 2. fázisban kuktában főzve fogyaszthatják"},
+    {"name": "Szója olaj", "group": "Olajok", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Szójafehérje", "group": "Zöldségek (lektintartalmúak)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": "Vegánok és vegetáriánusok a 2. fázisban kuktában főzve fogyaszthatják"},
+    {"name": "Szőlőmag Liszt", "group": "Lisztek", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Szőlőmag olaj", "group": "Olajok", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Sztívia", "group": "Édesítők", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Tarógyökér", "group": "Ellenálló keményítők", "recommendation": "IGEN Kérek", "note": "Módjával fogyassza"},
+    {"name": "Tej", "group": "Tejtermékek (kerülendő)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": "Kazein A-1-et tartalmaz"},
+    {"name": "Tengeri hínár tészta", "group": "Tészták (elfogadható)", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Tészta", "group": "Finomított keményítőt tartalmazó ételek", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Textúrált zöldségfehérje", "group": "Zöldségek (lektintartalmúak)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": "Vegánok és vegetáriánusok a 2. fázisban kuktában főzve fogyaszthatják"},
+    {"name": "Tigrismogyoró", "group": "Ellenálló keményítők", "recommendation": "IGEN Kérek", "note": "Módjával fogyassza"},
+    {"name": "Tigrismogyoró Liszt", "group": "Lisztek", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Tintahal", "group": "Halak", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Tofu", "group": "Zöldségek (lektintartalmúak)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": "Vegánok és vegetáriánusok a 2. fázisban kuktában főzve fogyaszthatják"},
+    {"name": "Tortilla", "group": "Finomított keményítőt tartalmazó ételek", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Tökféle az összes", "group": "Gyümölcsök (botanikailag)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Tökmag", "group": "Diófélék és Magok", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Tönkölybúza", "group": "Pszeudo-gabonák", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Uborka", "group": "Gyümölcsök (botanikailag)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Útifűmag", "group": "Diófélék és Magok", "recommendation": "IGEN Kérek", "note": "Napi 1/2 bögre mennyiségben ajánlott"},
+    {"name": "Vad rizs", "group": "Pszeudo-gabonák", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Vaddisznó", "group": "Hús (legelőn nevelt)", "recommendation": "IGEN Kérek", "note": "Napi 110 g mennyiségben ajánlott"},
+    {"name": "Vadhús", "group": "Hús (legelőn nevelt)", "recommendation": "IGEN Kérek", "note": "Napi 110 g mennyiségben ajánlott"},
+    {"name": "Valódi parmezán", "group": "Tejtermékek", "recommendation": "IGEN Kérek", "note": "Napi 300 g mennyiségben ajánlott"},
+    {"name": "Víztorma", "group": "Zöldségek (keresztesvirágúak)", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Vöröspálma-olaj", "group": "Olajok", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Wrap (kókuszlisztből)", "group": "Ellenálló keményítők", "recommendation": "IGEN Kérek", "note": "Módjával fogyassza"},
+    {"name": "Xilit", "group": "Édesítők", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Yacon Mexikói jamgyökér", "group": "Édesítők", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Zab (nem lehet kuktában főzni)", "group": "Pszeudo-gabonák", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Zeller", "group": "Zöldségek", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Zellergyökér", "group": "Ellenálló keményítők", "recommendation": "IGEN Kérek", "note": "Módjával fogyassza"},
+    {"name": "Zöld banán főzőbanán", "group": "Ellenálló keményítők", "recommendation": "IGEN Kérek", "note": "Módjával fogyassza"},
+    {"name": "Zöld banán Liszt", "group": "Lisztek", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Zöld mangó és papaya", "group": "Ellenálló keményítők", "recommendation": "IGEN Kérek", "note": "Módjával fogyassza"},
+    {"name": "Zöld szójabab", "group": "Zöldségek (lektintartalmúak)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": "Vegánok és vegetáriánusok a 2. fázisban kuktában főzve fogyaszthatják"},
+    {"name": "Zöldbab", "group": "Zöldségek (lektintartalmúak)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": "Vegánok és vegetáriánusok a 2. fázisban kuktában főzve fogyaszthatják"},
+    {"name": "Zöldborsó fehérje", "group": "Zöldségek (lektintartalmúak)", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": "Vegánok és vegetáriánusok a 2. fázisban kuktában főzve fogyaszthatják"},
+    {"name": "Zöldség olaj", "group": "Olajok", "recommendation": "KÖSZÖNÖM NEMKÉREK", "note": ""},
+    {"name": "Zöldségzöldje", "group": "Zöldségek", "recommendation": "IGEN Kérek", "note": ""},
+    {"name": "Zsíros Francia Olasz sajtok", "group": "Tejtermékek", "recommendation": "IGEN Kérek", "note": "Napi 300 g mennyiségben ajánlott"}
+]; // Ide illeszd be a foodData.json tartalmát
+
+        // Toast üzenet megjelenítése
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            // Animáció: megjelenés
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 100);
+
+            // Animáció: eltűnés 3 másodperc után
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 3000);
+        }
+
+        // Adatok betöltése a beágyazott adatokból
+        function loadInitialData() {
+            return initialFoodData;
+        }
+
+        // Adatok betöltése localStorage-ból vagy a beágyazott adatokból
+        async function loadDataFromLocalStorage() {
+            const savedData = localStorage.getItem(foodDataKey);
+            if (savedData) {
+                currentData = JSON.parse(savedData);
+                console.log('Adatok betöltve a localStorage-ból:', currentData);
+            } else {
+                // Ha nincs mentett adat, betöltjük a beágyazott adatokat
+                currentData = loadInitialData();
+            }
+
+            // Ha a currentData üres, figyelmeztetés
+            if (!currentData || currentData.length === 0) {
+                console.log('A currentData üres, ellenőrizd az initialFoodData változót!');
+                showToast('Nincsenek betöltött adatok. Kérlek, ellenőrizd az initialFoodData változót!', 'error');
+                return;
+            }
+
+            // Eltávolítjuk a " jeleket az ételcsoportokból és frissítjük a recommendation értékeket
+            currentData = currentData.map(item => ({
+                ...item,
+                group: item.group.replace(/"/g, ''),
+                recommendation: item.recommendation === "IGEN Kérek" ? "Igen Kérek" : 
+                               item.recommendation === "KÖSZÖNÖM NEMKÉREK" ? "Köszönöm nem kérek" : item.recommendation,
+                note: item.note || '' // Biztosítjuk, hogy a note mindig string legyen
+            }));
+
+            // Oszlopok láthatóságának betöltése
+            const savedVisibility = localStorage.getItem(columnVisibilityKey);
+            if (savedVisibility) {
+                columnVisibility = JSON.parse(savedVisibility);
+            }
+
+            // Inicializáláskor rendezzük a currentData-t a sortConfig alapján
+            sortData();
+            // Mentsük az adatokat a localStorage-ba a " jelek eltávolítása és a feliratok frissítése után
+            saveDataToLocalStorage();
+            // Frissítjük a táblázatot a betöltött adatokkal
+            filterTable(currentData);
+        }
+
+        // Adatok mentése localStorage-ba
+        function saveDataToLocalStorage() {
+            localStorage.setItem(foodDataKey, JSON.stringify(currentData));
+            localStorage.setItem(columnVisibilityKey, JSON.stringify(columnVisibility));
+        }
+
+        // Rendezési logika
+        function sortData() {
+            currentData.sort((a, b) => {
+                let valueA = a[sortConfig.key];
+                let valueB = b[sortConfig.key];
+
+                if (sortConfig.key === 'name' || sortConfig.key === 'group' || sortConfig.key === 'recommendation') {
+                    valueA = valueA.toLowerCase();
+                    valueB = valueB.toLowerCase();
+                    if (sortConfig.direction === 'asc') {
+                        return valueA.localeCompare(valueB);
+                    } else {
+                        return valueB.localeCompare(valueA);
+                    }
+                }
+                return 0;
+            });
+            filterTable(currentData);
+        }
+
+        // Oszlopfejléc kattintás kezelése
+        function handleSort(event) {
+            const key = event.target.getAttribute('data-sort');
+            if (!key) return;
+
+            if (sortConfig.key === key) {
+                // Ha ugyanarra az oszlopra kattintunk, váltjuk az irányt
+                sortConfig.direction = sortConfig.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                // Ha másik oszlopra kattintunk, alapértelmezett irány: asc
+                sortConfig.key = key;
+                sortConfig.direction = 'asc';
+            }
+
+            // Frissítjük a nyíl ikonokat
+            document.querySelectorAll('.sort-icon').forEach(icon => {
+                icon.textContent = '';
+            });
+            const sortIcon = event.target.querySelector('.sort-icon');
+            sortIcon.textContent = sortConfig.direction === 'asc' ? '↑' : '↓';
+
+            sortData();
+        }
+
+        // Egyedi ételcsoportok kinyerése
+        function getUniqueGroups() {
+            const groups = [...new Set(currentData.map(item => item.group))];
+            return groups.sort();
+        }
+
+        // Speciális karakterek escape-elése HTML attribútumokhoz
+        function escapeHtmlAttribute(value) {
+            return value.replace(/'/g, '');
+        }
+
+        // Ételcsoport legördülő lista feltöltése kereshető módon
+        function setupSearchableDropdown(inputId, optionsId) {
+            const input = document.getElementById(inputId);
+            const optionsContainer = document.getElementById(optionsId);
+            let allGroups = getUniqueGroups();
+
+            function populateOptions(groups) {
+                optionsContainer.innerHTML = '';
+                groups.forEach(group => {
+                    const option = document.createElement('div');
+                    option.textContent = group;
+                    option.className = 'option';
+                    option.addEventListener('click', () => {
+                        input.value = group;
+                        optionsContainer.style.display = 'none';
+                    });
+                    optionsContainer.appendChild(option);
+                });
+            }
+
+            populateOptions(allGroups);
+
+            input.addEventListener('input', () => {
+                const searchTerm = input.value.toLowerCase();
+                const filteredGroups = allGroups.filter(group => group.toLowerCase().includes(searchTerm));
+                populateOptions(filteredGroups);
+                optionsContainer.style.display = filteredGroups.length > 0 ? 'block' : 'none';
+            });
+
+            input.addEventListener('focus', () => {
+                optionsContainer.style.display = 'block';
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!input.contains(e.target) && !optionsContainer.contains(e.target)) {
+                    optionsContainer.style.display = 'none';
+                }
+            });
+        }
+
+        // Oszlop kiválasztó menü inicializálása
+        function setupColumnSelector() {
+            const columnSelectorButton = document.getElementById('columnSelectorButton');
+            const columnSelectorOptions = document.getElementById('columnSelectorOptions');
+
+            columnSelectorButton.addEventListener('click', () => {
+                columnSelectorOptions.style.display = columnSelectorOptions.style.display === 'block' ? 'none' : 'block';
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!columnSelectorButton.contains(e.target) && !columnSelectorOptions.contains(e.target)) {
+                    columnSelectorOptions.style.display = 'none';
+                }
+            });
+
+            // Oszlopok láthatóságának inicializálása
+            Object.keys(columnVisibility).forEach(column => {
+                const checkbox = document.getElementById(column);
+                checkbox.checked = columnVisibility[column];
+                toggleColumnVisibility(column, columnVisibility[column]);
+                checkbox.addEventListener('change', () => {
+                    columnVisibility[column] = checkbox.checked;
+                    toggleColumnVisibility(column, checkbox.checked);
+                    saveDataToLocalStorage();
+                });
+            });
+        }
+
+        // Oszlop láthatóságának kezelése
+        function toggleColumnVisibility(columnClass, isVisible) {
+            const elements = document.querySelectorAll(`.${columnClass}`);
+            elements.forEach(element => {
+                if (isVisible) {
+                    element.classList.remove('hidden');
+                } else {
+                    element.classList.add('hidden');
+                }
+            });
+        }
+
+        // Étel nevének ellenőrzése
+        function checkFoodName(name, excludeName = null) {
+            return currentData.some(item => item.name.toLowerCase() === name.toLowerCase() && item.name !== excludeName);
+        }
 
         function populateTable(data) {
             const tbody = document.getElementById('foodTableBody');
-            const errorMessage = document.getElementById('errorMessage');
             tbody.innerHTML = '';
             try {
-                data.forEach(item => {
+                if (!data || data.length === 0) {
+                    showToast('A keresett elem vagy étel nem található a listában.', 'error');
+                    return;
+                }
+                data.forEach((item, index) => {
+                    // Debug: Ellenőrizzük az item.note értékét
+                    console.log(`Item: ${item.name}, Note: ${item.note}, Type: ${typeof item.note}`);
+
                     const row = document.createElement('tr');
-                    row.className = 'border-b border-gray-700 hover:bg-gray-700';
-                    row.innerHTML = `
-                        <td class="p-3">${item.name}</td>
-                        <td class="p-3">${item.group}</td>
-                        <td class="p-3 ${item.recommendation === 'IGEN Kérek' ? 'text-green-400' : 'text-red-500'}">${item.recommendation}</td>
-                    `;
+                    row.className = `border-b border-gray-700 hover:shadow-lg table-row ${item.recommendation === 'Igen Kérek' ? 'bg-green-900' : 'bg-red-900'}`;
+                    row.dataset.name = item.name;
+                    row.draggable = true; // Drag-and-drop engedélyezése
+
+                    const isEditing = editingName === item.name;
+                    if (isEditing) {
+                        const groupOptions = getUniqueGroups().map(group => 
+                            `<option value="${escapeHtmlAttribute(group)}" ${item.group === group ? 'selected' : ''}>${group}</option>`
+                        ).join('');
+                        row.innerHTML = `
+                            <td class="p-2 column-name"><input type="text" value="${escapeHtmlAttribute(item.name)}" class="edit-name w-full p-1 bg-gray-700 text-gray-100 border border-gray-600 rounded"></td>
+                            <td class="p-2 column-group">
+                                <select class="edit-group w-full p-1 bg-gray-700 text-gray-100 border border-gray-600 rounded">
+                                    ${groupOptions}
+                                </select>
+                            </td>
+                            <td class="p-2 w-48 column-recommendation">
+                                <select class="edit-recommendation w-full p-1 bg-gray-700 text-gray-100 border border-gray-600 rounded">
+                                    <option value="Igen Kérek" ${item.recommendation === 'Igen Kérek' ? 'selected' : ''}>Igen Kérek</option>
+                                    <option value="Köszönöm nem kérek" ${item.recommendation === 'Köszönöm nem kérek' ? 'selected' : ''}>Köszönöm nem kérek</option>
+                                </select>
+                            </td>
+                            <td class="p-2 column-note"><input type="text" value="${item.note || ''}" class="edit-note w-full p-1 bg-gray-700 text-gray-100 border border-gray-600 rounded"></td>
+                            <td class="p-2 column-actions">
+                                <div class="flex flex-row gap-1">
+                                    <button class="save-button py-0.5 px-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm hover:scale-105 transition-transform">Mentés</button>
+                                    <button class="delete-button py-0.5 px-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm hover:scale-105 transition-transform">Töröl</button>
+                                </div>
+                            </td>
+                        `;
+                        row.querySelector('.save-button').addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            saveRow(item.name);
+                        });
+                        row.querySelector('.delete-button').addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            deleteRow(item.name);
+                        });
+                        row.querySelector('.edit-group').addEventListener('click', (e) => e.stopPropagation());
+                        row.querySelector('.edit-recommendation').addEventListener('click', (e) => e.stopPropagation());
+                    } else {
+                        // Biztosítjuk, hogy az item.note mindig string legyen a megjelenítéskor
+                        const noteValue = item.note !== undefined && item.note !== null ? item.note : '';
+                        row.innerHTML = `
+                            <td class="p-2 column-name">${item.name}</td>
+                            <td class="p-2 column-group">${item.group}</td>
+                            <td class="p-2 w-48 whitespace-nowrap column-recommendation ${item.recommendation === 'Igen Kérek' ? 'text-green-400' : 'text-red-500'}">${item.recommendation}</td>
+                            <td class="p-2 column-note">${noteValue}</td>
+                            <td class="p-2 column-actions">
+                                <div class="flex flex-row gap-1">
+                                    <button class="edit-button py-0.5 px-1 bg-yellow-600 text-white rounded hover:bg-yellow-700 text-sm hover:scale-105 transition-transform">Szerk.</button>
+                                    <button class="delete-button py-0.5 px-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm hover:scale-105 transition-transform">Töröl</button>
+                                </div>
+                            </td>
+                        `;
+                        row.querySelector('.edit-button').addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            if (editingName !== null && editingName !== item.name) {
+                                // Csak akkor mentsük az előző szerkesztést, ha valóban van mit menteni
+                                const previousRow = document.querySelector(`tr[data-name="${editingName}"]`);
+                                if (previousRow) {
+                                    saveRow(editingName);
+                                }
+                            }
+                            editingName = item.name;
+                            populateTable(data);
+                        });
+                        row.querySelector('.delete-button').addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            deleteRow(item.name);
+                        });
+                    }
+
+                    // Drag-and-drop eseménykezelők
+                    row.addEventListener('dragstart', (e) => {
+                        draggedRow = row;
+                        row.classList.add('dragging');
+                        e.dataTransfer.setData('text/plain', index);
+                    });
+                    row.addEventListener('dragend', () => {
+                        row.classList.remove('dragging');
+                        document.querySelectorAll('.drag-over').forEach(r => r.classList.remove('drag-over'));
+                        draggedRow = null;
+                    });
+                    row.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        if (draggedRow && draggedRow !== row) {
+                            row.classList.add('drag-over');
+                        }
+                    });
+                    row.addEventListener('dragleave', () => {
+                        row.classList.remove('drag-over');
+                    });
+                    row.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        if (draggedRow && draggedRow !== row) {
+                            const draggedIndex = Array.from(tbody.children).indexOf(draggedRow);
+                            const targetIndex = Array.from(tbody.children).indexOf(row);
+                            // Sorok átrendezése a currentData tömbben
+                            const [draggedItem] = currentData.splice(draggedIndex, 1);
+                            currentData.splice(targetIndex, 0, draggedItem);
+                            // Táblázat újrarajzolása
+                            populateTable(currentData);
+                            saveDataToLocalStorage(); // Sorrend mentése
+                        }
+                        row.classList.remove('drag-over');
+                    });
+
                     tbody.appendChild(row);
                 });
-                errorMessage.classList.add('hidden');
             } catch (error) {
                 console.error('Hiba a táblázat feltöltése közben:', error);
-                errorMessage.classList.remove('hidden');
+                showToast('Hiba történt az adatok betöltése közben. Kérlek, próbáld újra!', 'error');
             }
         }
 
-        function filterTable() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const recommendationFilter = document.getElementById('recommendationFilter').value;
+        function deleteRow(name) {
+            const confirmDelete = confirm(`Biztosan törölni szeretnéd a(z) "${name}" ételt?`);
+            if (confirmDelete) {
+                currentData = currentData.filter(item => item.name !== name);
+                editingName = null;
+                filterTable(currentData);
+                saveDataToLocalStorage(); // Adatok mentése localStorage-ba
+                showToast(`A(z) "${name}" étel törölve!`, 'success');
+            }
+        }
 
-            let filteredData = foodData;
+        function saveRow(name) {
+            const row = document.querySelector(`tr[data-name="${name}"]`);
+            if (!row) return; // Ha a sor nem létezik, kilépünk
 
-            // Szűrés az "Ajánlás" alapján
-            if (recommendationFilter !== 'all') {
-                filteredData = filteredData.filter(item => item.recommendation === recommendationFilter);
+            const newName = row.querySelector('.edit-name').value.trim();
+            const newGroup = row.querySelector('.edit-group').value;
+            const newRecommendation = row.querySelector('.edit-recommendation').value;
+            const newNote = row.querySelector('.edit-note').value.trim();
+
+            if (!newName || !newGroup) {
+                showToast('Kérlek, add meg az étel nevét és válassz egy ételcsoportot!', 'error');
+                return;
             }
 
-            // Szűrés a keresőmező alapján
+            if (checkFoodName(newName, name)) {
+                showToast('Ez az étel neve már szerepel a listában! Kérlek, válassz másik nevet.', 'error');
+                return;
+            }
+
+            const originalItem = currentData.find(item => item.name === name);
+            const hasChanged = newName !== originalItem.name || newGroup !== originalItem.group || newRecommendation !== originalItem.recommendation || newNote !== (originalItem.note || '');
+
+            const index = currentData.findIndex(item => item.name === name);
+            currentData[index] = { name: newName, group: newGroup, recommendation: newRecommendation, note: newNote };
+            editingName = null;
+            filterTable(currentData);
+            saveDataToLocalStorage(); // Adatok mentése localStorage-ba
+
+            if (hasChanged) {
+                showToast('A módosítás sikeresen mentve!', 'success');
+            }
+        }
+
+        function filterTable(data) {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const recommendationFilter = document.getElementById('recommendationFilter').value.toLowerCase();
+
+            let filteredData = data;
+
+            if (recommendationFilter !== 'all') {
+                filteredData = filteredData.filter(item => item.recommendation.toLowerCase() === recommendationFilter);
+            }
+
             filteredData = filteredData.filter(item => 
                 item.name.toLowerCase().includes(searchTerm) ||
                 item.group.toLowerCase().includes(searchTerm) ||
-                item.recommendation.toLowerCase().includes(searchTerm)
+                item.recommendation.toLowerCase().includes(searchTerm) ||
+                (item.note && item.note.toLowerCase().includes(searchTerm))
             );
 
             populateTable(filteredData);
         }
 
-        document.getElementById('searchInput').addEventListener('input', filterTable);
-        document.getElementById('recommendationFilter').addEventListener('change', filterTable);
+        function clearSearch() {
+            const searchInput = document.getElementById('searchInput');
+            searchInput.value = ''; // Kereső mező kiürítése
+            filterTable(currentData); // Táblázat frissítése az összes adattal
+        }
 
-        // Initial population of the table
-        populateTable(foodData);
+        function resetFilters() {
+            const searchInput = document.getElementById('searchInput');
+            const recommendationFilter = document.getElementById('recommendationFilter');
+            searchInput.value = ''; // Kereső mező kiürítése
+            recommendationFilter.value = 'all'; // Szűrő visszaállítása "Összes"-re
+            filterTable(currentData); // Táblázat frissítése az összes adattal
+        }
+
+        function exportData() {
+            if (!currentData || currentData.length === 0) {
+                showToast('Nincs exportálható adat!', 'error');
+                return;
+            }
+            try {
+                const dataStr = JSON.stringify(currentData, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'foodData.json';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                showToast('Adatok sikeresen exportálva!', 'success');
+            } catch (error) {
+                console.error('Hiba az exportálás során:', error);
+                showToast('Hiba történt az exportálás során. Kérlek, próbáld újra!', 'error');
+            }
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (Array.isArray(importedData)) {
+                        currentData = importedData.map(item => ({
+                            name: item.name || '',
+                            group: item.group || '',
+                            recommendation: item.recommendation === "IGEN Kérek" ? "Igen Kérek" : 
+                                           item.recommendation === "KÖSZÖNÖM NEMKÉREK" ? "Köszönöm nem kérek" : item.recommendation || '',
+                            note: item.note || ''
+                        }));
+                        filterTable(currentData);
+                        saveDataToLocalStorage();
+                        setupSearchableDropdown('newFoodGroupInput', 'newFoodGroupOptions');
+                        showToast('Adatok sikeresen importálva!', 'success');
+                    } else {
+                        showToast('Érvénytelen adatformátum! Kérlek, válassz egy érvényes JSON fájlt.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Hiba az importálás során:', error);
+                    showToast('Hiba történt az importálás során. Kérlek, próbáld újra!', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function addFood() {
+            const name = document.getElementById('newFoodName').value.trim();
+            const group = document.getElementById('newFoodGroupInput').value.trim();
+            const recommendation = document.getElementById('newFoodRecommendation').value;
+
+            if (!name || !group) {
+                showToast('Kérlek, add meg az étel nevét és válassz vagy adj meg egy ételcsoportot!', 'error');
+                return;
+            }
+
+            if (checkFoodName(name)) {
+                showToast('Ez az étel neve már szerepel a listában! Kérlek, válassz másik nevet.', 'error');
+                return;
+            }
+
+            const newFood = { name, group, recommendation, note: '' };
+            currentData.push(newFood);
+
+            // Űrlap ürítése
+            document.getElementById('newFoodName').value = '';
+            document.getElementById('newFoodGroupInput').value = '';
+
+            // Táblázat frissítése
+            filterTable(currentData);
+            saveDataToLocalStorage(); // Adatok mentése localStorage-ba
+            setupSearchableDropdown('newFoodGroupInput', 'newFoodGroupOptions');
+            showToast(`A(z) "${name}" étel sikeresen hozzáadva!`, 'success');
+        }
+
+        // Eseménykezelők
+        document.getElementById('addFoodButton').addEventListener('click', addFood);
+        document.getElementById('searchInput').addEventListener('input', () => filterTable(currentData));
+        document.getElementById('recommendationFilter').addEventListener('change', () => filterTable(currentData));
+        document.getElementById('clearSearchButton').addEventListener('click', clearSearch);
+        document.getElementById('resetFiltersButton').addEventListener('click', resetFilters);
+        document.getElementById('exportButton').addEventListener('click', exportData);
+        document.getElementById('importInput').addEventListener('change', importData);
+
+        // Oszlopfejléc kattintás eseménykezelő
+        document.querySelectorAll('th[data-sort]').forEach(header => {
+            header.addEventListener('click', handleSort);
+        });
+
+        // Táblázaton kívüli kattintás figyelése
+        document.addEventListener('click', (e) => {
+            const table = document.getElementById('foodTable');
+            if (editingName !== null && !table.contains(e.target)) {
+                const previousRow = document.querySelector(`tr[data-name="${editingName}"]`);
+                if (previousRow) {
+                    saveRow(editingName);
+                } else {
+                    editingName = null;
+                    filterTable(currentData);
+                }
+            }
+        });
+
+        // Inicializálás
+        loadDataFromLocalStorage(); // Adatok betöltése localStorage-ból vagy a beágyazott adatokból
+        setupSearchableDropdown('newFoodGroupInput', 'newFoodGroupOptions');
+        setupColumnSelector();
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92caede0c82dae89',t:'MTc0NDA0MzYzMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
