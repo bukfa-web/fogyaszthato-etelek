@@ -79,21 +79,19 @@
                 baseData = initialFoodData.slice();
             }
 
-            // Ha van localStorage-ban mentett adat → azt használjuk (felhasználói módosítások megmaradnak)
+            // Ha van localStorage-ban mentett adat → azt használjuk (felhasználói módosítások)
             const saved = localStorage.getItem('foodData');
             if (saved) {
                 try {
                     const savedData = JSON.parse(saved);
                     foodData = savedData;
-                    console.log("Adatok betöltve a localStorage-ból (felhasználói módosításokkal)");
                 } catch (e) {
                     console.error("Hibás localStorage adat → alap data.js használata");
                     foodData = baseData;
                 }
             } else {
-                // Ha nincs localStorage → tiszta alapadatokat töltünk be a data.js-ből
+                // Ha nincs localStorage → a data.js-ből töltünk
                 foodData = baseData;
-                console.log("Adatok betöltve a data.js-ből (alap verzió)");
             }
 
             populateGroupFilter();
