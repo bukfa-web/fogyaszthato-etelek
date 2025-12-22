@@ -92,12 +92,11 @@
         let currentData = [];
         let editingName = null;
 
-        // Adatok betöltése a fooddata.json-ból
         function loadFoodData() {
             fetch('./fooddata.json')
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error('Hiba a fooddata.json betöltésekor: ' + response.status);
+                        throw new Error('Hiba a fooddata.json betöltésekor');
                     }
                     return response.json();
                 })
@@ -218,6 +217,12 @@
 
         document.querySelectorAll('th[data-sort]').forEach(header => {
             header.addEventListener('click', handleSort);
+        });
+
+        document.addEventListener('click', (e) => {
+            if (editingName !== null && !e.target.closest('#foodTable')) {
+                saveRow(editingName);
+            }
         });
     </script>
 </body>
