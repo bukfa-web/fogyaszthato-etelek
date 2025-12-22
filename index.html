@@ -766,12 +766,14 @@
                         item.recommendation && typeof item.recommendation === 'string' &&
                         typeof item.note === 'string'
                     );
-                    if (isValidData) {
-                        currentData = parsedData;
-                        console.log('Adatok betöltve a localStorage-ból:', currentData);
-                    } else {
-                        console.log('A localStorage adatai nem megfelelőek, initialFoodData betöltése...');
-                    }
+                    if (isValidData && parsedData.length > 100) {  // csak ha elég nagy az adat
+						currentData = parsedData;
+						console.log('Adatok betöltve a localStorage-ból (nagy adathalmaz):', currentData.length);
+					} else {
+						console.log('LocalStorage adat túl kicsi vagy hibás (' + (parsedData ? parsedData.length : 0) + ' elem), initialFoodData betöltése...');
+						currentData = loadInitialData();
+						saveDataToLocalStorage();  // azonnal mentjük a teljes listát, hogy legközelebb már jó legyen
+				}
                 } catch (error) {
                     console.error('Hiba a localStorage adatok betöltése során:', error);
                 }
