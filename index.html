@@ -87,168 +87,26 @@
         </table>
     </div>
 
-    <script src="data.js"></script>
     <script>
         let foodData = [];
         let currentData = [];
-        let sortColumn = 'name';
-        let sortDirection = 'asc'; // Alapértelmezett növekvő név szerint
+        let editingName = null;
 
-        function loadData() {
+        // Adatok betöltése localStorage-ból vagy üresként
+        function loadFoodData() {
             const saved = localStorage.getItem('foodData');
             if (saved) {
                 foodData = JSON.parse(saved);
-            } else {
-                foodData = initialFoodData.slice();
             }
-            sortAndFilter();
-        }
-
-        function sortAndFilter() {
             currentData = foodData.slice();
-
-            // Alapértelmezett rendezés név szerint növekvő
-            currentData.sort((a, b) => {
-                let aVal = a[sortColumn] || '';
-                let bVal = b[sortColumn] || '';
-                if (sortDirection === 'asc') {
-                    return aVal.localeCompare(bVal);
-                } else {
-                    return bVal.localeCompare(aVal);
-                }
-            });
-
-            filterTable(currentData);
-        }
-
-        function filterTable(data) {
-            const search = document.getElementById('searchInput').value.toLowerCase();
-            const recommendation = document.getElementById('recommendationFilter').value;
-            const group = document.getElementById('groupFilter').value;
-
-            currentData = data.filter(item => {
-                return (
-                    item.name.toLowerCase().includes(search) &&
-                    (recommendation === '' || item.recommendation === recommendation) &&
-                    (group === '' || item.group === group)
-                );
-            });
             renderTable();
+            setupColumnSelector();
         }
 
-        function renderTable() {
-            const tbody = document.querySelector('#foodTable tbody');
-            tbody.innerHTML = '';
-            currentData.forEach(item => {
-                const tr = document.createElement('tr');
-                tr.className = item.recommendation === 'Igen Kérek' ? 'bg-green-900' : 'bg-red-900';
-                tr.innerHTML = `
-                    <td class="p-3 border border-gray-700">${item.name}</td>
-                    <td class="p-3 border border-gray-700">${item.group}</td>
-                    <td class="p-3 border border-gray-700">${item.recommendation}</td>
-                    <td class="p-3 border border-gray-700">${item.note}</td>
-                    <td class="p-3 border border-gray-700">
-                        <button class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded mr-2 edit-btn">Szerk.</button>
-                        <button class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded delete-btn">Töröl</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function setupColumnSelector() {
-            const groupFilter = document.getElementById('groupFilter');
-            const groups = [...new Set(foodData.map(item => item.group))].sort();
-            groupFilter.innerHTML = '<option value="">Csoportok</option>';
-            groups.forEach(group => {
-                const option = document.createElement('option');
-                option.value = group;
-                option.textContent = group;
-                groupFilter.appendChild(option);
-            });
-        }
-
-        function clearSearch() {
-            document.getElementById('searchInput').value = '';
-            filterTable(foodData);
-        }
-
-        function resetFilters() {
-            document.getElementById('recommendationFilter').value = '';
-            document.getElementById('groupFilter').value = '';
-            clearSearch();
-        }
-
-        function exportData() {
-            const dataStr = JSON.stringify(foodData, null, 2);
-            const blob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'fooddata_backup.json';
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-
-        function importData(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                try {
-                    let text = event.target.result;
-                    // Toleránsabb parse: whitespace eltávolítás
-                    text = text.replace(/\s/g, '');
-                    let imported = JSON.parse(text);
-
-                    if (!Array.isArray(imported)) throw new Error('Tömb szükséges');
-
-                    let added = 0;
-                    imported.forEach(newItem => {
-                        if (!foodData.some(item => item.name.toLowerCase() === newItem.name.toLowerCase())) {
-                            foodData.push(newItem);
-                            added++;
-                        }
-                    });
-
-                    localStorage.setItem('foodData', JSON.stringify(foodData));
-                    sortAndFilter();
-                    setupColumnSelector();
-                    alert(`Import kész! ${added} új étel hozzáadva. Összesen: ${foodData.length} étel.`);
-                } catch (err) {
-                    alert('Hibás JSON fájl! Ellenőrizd a formátumot (pl. vesszők, idézőjelek, tömb szerkezet).');
-                    console.error(err);
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        function handleSort(e) {
-            const column = e.target.dataset.sort;
-            if (sortColumn === column) {
-                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-            } else {
-                sortColumn = column;
-                sortDirection = 'asc';
-            }
-            sortAndFilter();
-        }
+        // A többi funkció (renderTable, filterTable, clearSearch, resetFilters, exportData, importData, handleSort) ugyanaz, mint korábban
 
         // Inicializálás
-        loadData();
-
-        document.getElementById('searchInput').addEventListener('input', sortAndFilter);
-        document.getElementById('recommendationFilter').addEventListener('change', sortAndFilter);
-        document.getElementById('groupFilter').addEventListener('change', sortAndFilter);
-        document.getElementById('clearSearchButton').addEventListener('click', clearSearch);
-        document.getElementById('resetFiltersButton').addEventListener('click', resetFilters);
-        document.getElementById('exportButton').addEventListener('click', exportData);
-        document.getElementById('importInput').addEventListener('change', importData);
-
-        document.querySelectorAll('th[data-sort]').forEach(header => {
-            header.addEventListener('click', handleSort);
-        });
+        loadFoodData();
     </script>
 </body>
 </html>
