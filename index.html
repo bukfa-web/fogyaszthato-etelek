@@ -64,7 +64,7 @@
                 <option value="Köszönöm nem kérek">Köszönöm nem kérek</option>
             </select>
             <select id="groupFilter" class="bg-gray-700 text-white px-4 py-2 rounded">
-                <option value="">Oszlopok</option>
+                <option value="">Csoportok</option>
             </select>
             <button id="exportButton" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">Export</button>
             <label class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded cursor-pointer">
@@ -91,7 +91,8 @@
     <script>
         let foodData = [];
         let currentData = [];
-        let editingName = null;
+        let sortColumn = 'name';
+        let sortDirection = 'asc'; // Alapértelmezett növekvő név szerint
 
         function loadData() {
             const saved = localStorage.getItem('foodData');
@@ -100,9 +101,39 @@
             } else {
                 foodData = initialFoodData.slice();
             }
+            sortAndFilter();
+        }
+
+        function sortAndFilter() {
             currentData = foodData.slice();
+
+            // Alapértelmezett rendezés név szerint növekvő
+            currentData.sort((a, b) => {
+                let aVal = a[sortColumn] || '';
+                let bVal = b[sortColumn] || '';
+                if (sortDirection === 'asc') {
+                    return aVal.localeCompare(bVal);
+                } else {
+                    return bVal.localeCompare(aVal);
+                }
+            });
+
+            filterTable(currentData);
+        }
+
+        function filterTable(data) {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const recommendation = document.getElementById('recommendationFilter').value;
+            const group = document.getElementById('groupFilter').value;
+
+            currentData = data.filter(item => {
+                return (
+                    item.name.toLowerCase().includes(search) &&
+                    (recommendation === '' || item.recommendation === recommendation) &&
+                    (group === '' || item.group === group)
+                );
+            });
             renderTable();
-            setupColumnSelector();
         }
 
         function renderTable() {
@@ -135,22 +166,6 @@
                 option.textContent = group;
                 groupFilter.appendChild(option);
             });
-            groupFilter.addEventListener('change', () => filterTable(foodData));
-        }
-
-        function filterTable(data) {
-            const search = document.getElementById('searchInput').value.toLowerCase();
-            const recommendation = document.getElementById('recommendationFilter').value;
-            const group = document.getElementById('groupFilter').value;
-
-            currentData = data.filter(item => {
-                return (
-                    item.name.toLowerCase().includes(search) &&
-                    (recommendation === '' || item.recommendation === recommendation) &&
-                    (group === '' || item.group === group)
-                );
-            });
-            renderTable();
         }
 
         function clearSearch() {
@@ -182,7 +197,11 @@
             const reader = new FileReader();
             reader.onload = function(event) {
                 try {
-                    const imported = JSON.parse(event.target.result);
+                    let text = event.target.result;
+                    // Toleránsabb parse: whitespace eltávolítás
+                    text = text.replace(/\s/g, '');
+                    let imported = JSON.parse(text);
+
                     if (!Array.isArray(imported)) throw new Error('Tömb szükséges');
 
                     let added = 0;
@@ -194,12 +213,11 @@
                     });
 
                     localStorage.setItem('foodData', JSON.stringify(foodData));
-                    currentData = foodData.slice();
-                    renderTable();
+                    sortAndFilter();
                     setupColumnSelector();
                     alert(`Import kész! ${added} új étel hozzáadva. Összesen: ${foodData.length} étel.`);
                 } catch (err) {
-                    alert('Hibás JSON fájl! Ellenőrizd a formátumot (pl. vesszők, idézőjelek).');
+                    alert('Hibás JSON fájl! Ellenőrizd a formátumot (pl. vesszők, idézőjelek, tömb szerkezet).');
                     console.error(err);
                 }
             };
@@ -208,16 +226,21 @@
 
         function handleSort(e) {
             const column = e.target.dataset.sort;
-            foodData.sort((a, b) => a[column].localeCompare(b[column]));
-            currentData = foodData.slice();
-            renderTable();
+            if (sortColumn === column) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumn = column;
+                sortDirection = 'asc';
+            }
+            sortAndFilter();
         }
 
         // Inicializálás
         loadData();
 
-        document.getElementById('searchInput').addEventListener('input', () => filterTable(foodData));
-        document.getElementById('recommendationFilter').addEventListener('change', () => filterTable(foodData));
+        document.getElementById('searchInput').addEventListener('input', sortAndFilter);
+        document.getElementById('recommendationFilter').addEventListener('change', sortAndFilter);
+        document.getElementById('groupFilter').addEventListener('change', sortAndFilter);
         document.getElementById('clearSearchButton').addEventListener('click', clearSearch);
         document.getElementById('resetFiltersButton').addEventListener('click', resetFilters);
         document.getElementById('exportButton').addEventListener('click', exportData);
@@ -225,12 +248,6 @@
 
         document.querySelectorAll('th[data-sort]').forEach(header => {
             header.addEventListener('click', handleSort);
-        });
-
-        document.addEventListener('click', (e) => {
-            if (editingName !== null && !e.target.closest('#foodTable')) {
-                saveRow(editingName);
-            }
         });
     </script>
 </body>
