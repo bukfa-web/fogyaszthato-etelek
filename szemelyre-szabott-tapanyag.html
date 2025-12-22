@@ -19,7 +19,7 @@
     <h1 class="text-3xl font-bold text-center mb-6">Személyre Szabott Tápanyag Ajánlás</h1>
     
     <div class="max-w-2xl mx-auto bg-gray-800 p-6 rounded-lg">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div>
                 <label class="block mb-2">Testsúly (kg)</label>
                 <input type="number" id="weight" value="110" class="w-full p-2 bg-gray-700 rounded">
@@ -31,6 +31,13 @@
             <div>
                 <label class="block mb-2">Életkor (év)</label>
                 <input type="number" id="age" value="62" class="w-full p-2 bg-gray-700 rounded">
+            </div>
+            <div>
+                <label class="block mb-2">Nem</label>
+                <select id="gender" class="w-full p-2 bg-gray-700 rounded">
+                    <option value="male" selected>Férfi</option>
+                    <option value="female">Nő</option>
+                </select>
             </div>
         </div>
         <div class="text-center">
@@ -46,85 +53,118 @@
     </div>
 
     <script>
-    function calculate() {
-        const weight = parseFloat(document.getElementById('weight').value) || 110;
-        const height = parseFloat(document.getElementById('height').value) || 193;
-        const age = parseFloat(document.getElementById('age').value) || 62;
+        function calculate() {
+            const weight = parseFloat(document.getElementById('weight').value) || 110;
+            const height = parseFloat(document.getElementById('height').value) || 193;
+            const age = parseFloat(document.getElementById('age').value) || 62;
+            const gender = document.getElementById('gender').value || 'male';
 
-        // Harris-Benedict képlet (férfi, ülő/könnyű aktivitás: 1.2 szorzó)
-        const bmr = 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age);
-        const dailyCalories = Math.round(bmr * 1.2);
+            // Harris-Benedict BMR (könnyű aktivitás: 1.2 szorzó)
+            let bmr;
+            if (gender === 'male') {
+                bmr = 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age);
+            } else {
+                bmr = 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age);
+            }
+            const dailyCalories = Math.round(bmr * 1.2);
 
-        // Makrotápanyagok számítása
-        const proteinMin = Math.round(1.4 * weight);
-        const proteinMax = Math.round(1.7 * weight);
-        const proteinKcalMin = proteinMin * 4;
-        const proteinKcalMax = proteinMax * 4;
+            // Makrotápanyagok
+            const proteinMin = Math.round(1.4 * weight);
+            const proteinMax = Math.round(1.7 * weight);
+            const proteinKcalMin = proteinMin * 4;
+            const proteinKcalMax = proteinMax * 4;
 
-        const carbsMin = Math.round(dailyCalories * 0.45 / 4);
-        const carbsMax = Math.round(dailyCalories * 0.65 / 4);
-        const carbsKcalMin = carbsMin * 4;
-        const carbsKcalMax = carbsMax * 4;
+            const carbsMin = Math.round(dailyCalories * 0.45 / 4);
+            const carbsMax = Math.round(dailyCalories * 0.65 / 4);
+            const carbsKcalMin = carbsMin * 4;
+            const carbsKcalMax = carbsMax * 4;
 
-        const fatMin = Math.round(dailyCalories * 0.20 / 9);
-        const fatMax = Math.round(dailyCalories * 0.35 / 9);
-        const fatKcalMin = fatMin * 9;
-        const fatKcalMax = fatMax * 9;
+            const fatMin = Math.round(dailyCalories * 0.20 / 9);
+            const fatMax = Math.round(dailyCalories * 0.35 / 9);
+            const fatKcalMin = fatMin * 9;
+            const fatKcalMax = fatMax * 9;
 
-        const results = `
-            <h2 class="text-2xl font-bold mb-4">Személyre szabott ajánlás</h2>
-            <p><strong>Adatok:</strong> ${weight} kg, ${height} cm, ${age} év (férfi)</p>
-            <p><strong>Becsült napi kalóriaigény:</strong> ${dailyCalories} kcal (könnyű aktivitás esetén)</p>
+            // Vitaminok/ásványi anyagok adjustált tartományai (RDA alapú, de magas dózisú verzió)
+            let dVitamin = '8000–12000 NE/nap';
+            if (age > 50) dVitamin += ' (idősebb kor miatt felső tartomány javasolt)';
+            if (weight > 100) dVitamin += ' (magasabb súly miatt +2000 NE)';
 
-            <h3 class="text-xl mt-8 mb-4">Makrotápanyagok</h3>
-            <ul class="space-y-4">
-                <li>
-                    <strong>Fehérje:</strong> ${proteinMin}–${proteinMax} g/nap (1,4–1,7 g/kg)<br>
-                    <small>→ ${proteinKcalMin}–${proteinKcalMax} kcal (kb. ${(Math.round(proteinKcalMin / dailyCalories * 100))}–${(Math.round(proteinKcalMax / dailyCalories * 100))}% a napi energiából)</small>
-                </li>
-                <li>
-                    <strong>Szénhidrát:</strong> ${carbsMin}–${carbsMax} g/nap<br>
-                    <small>→ ${carbsKcalMin}–${carbsKcalMax} kcal (45–65% a napi energiából)</small>
-                </li>
-                <li>
-                    <strong>Zsír:</strong> ${fatMin}–${fatMax} g/nap<br>
-                    <small>→ ${fatKcalMin}–${fatKcalMax} kcal (20–35% a napi energiából)</small>
-                </li>
-            </ul>
+            let magnesiumMin = gender === 'male' ? 600 : 500; // RDA férfi 420, nő 320 – mi magasabbat
+            let magnesiumMax = gender === 'male' ? 800 : 700;
+            let magnesium = `${magnesiumMin}–${magnesiumMax} mg/nap (biszglicinát forma)`;
 
-            <h3 class="text-xl mt-8 mb-4">Vitaminok és ásványi anyagok (optimális tartomány gyulladáscsökkentő étrendhez)</h3>
-            <p>A legtöbb javasolt dózis fix, magas tartományban marad (testsúlytól függetlenül optimális).</p>
+            let zincMin = gender === 'male' ? 20 : 15; // RDA férfi 11, nő 8
+            let zincMax = gender === 'male' ? 30 : 25;
+            let zinc = `${zincMin}–${zincMax} mg/nap`;
 
-            <details open><summary><strong>D-vitamin</strong></summary>
-                <p>8000–12000 NE/nap${weight > 100 ? ' (testsúlyod miatt inkább a felső tartomány javasolt)' : ''}</p>
-                <p>Télen-nyáron pótlás, K2-vitaminnal és magnéziummal együtt.</p>
-            </details>
-            <details><summary><strong>K2-vitamin</strong></summary><p>100–150 mcg/nap</p></details>
-            <details><summary><strong>C-vitamin</strong></summary><p>1000–2000 mg/nap</p></details>
-            <details><summary><strong>E-vitamin</strong></summary><p>400–800 NE/nap</p></details>
-            <details><summary><strong>B12-vitamin (metilkobalamin forma)</strong></summary><p>500–1000 mcg/nap</p></details>
-            <details><summary><strong>Magnézium (biszglicinát)</strong></summary><p>600–800 mg/nap</p></details>
-            <details><summary><strong>Cink</strong></summary><p>20–30 mg/nap</p></details>
-            <details><summary><strong>Szelén</strong></summary><p>200–300 mcg/nap</p></details>
-            <details><summary><strong>Jód</strong></summary><p>200–300 mcg/nap</p></details>
-            <details><summary><strong>Króm</strong></summary><p>200–400 mcg/nap</p></details>
-            <details><summary><strong>Kalcium</strong></summary><p>1000–1500 mg/nap</p></details>
-            <details><summary><strong>Omega-3 (EPA+DHA)</strong></summary><p>2–4 g/nap</p></details>
+            let chromiumMin = gender === 'male' ? 200 : 150; // AI férfi 30-35, nő 20-25
+            let chromiumMax = gender === 'male' ? 400 : 300;
+            let chromium = `${chromiumMin}–${chromiumMax} mcg/nap`;
 
-            <h3 class="text-xl mt-8 mb-4">Általános tanácsok</h3>
-            <ul class="list-disc pl-6 space-y-2">
-                <li>Aktív, jól felszívódó formákat válassz (pl. metilkobalamin, biszglicinát).</li>
-                <li>A legfontosabbakat (D3, K2, magnézium, C, E, B12) <strong>külön-külön</strong> szedd, ne csak multivitaminban.</li>
-                <li>D-vitamin + K2 + magnézium hármas együtt a legjobb a kalcium-anyagcseréhez.</li>
-                <li>Mindig konzultálj orvossal vérvétel alapján egyéni finomhangoláshoz.</li>
-            </ul>
-        `;
+            // Egyéb fixek, de kor adjust ha kell
+            let k2Vitamin = '100–150 mcg/nap';
+            let cVitamin = '1000–2000 mg/nap';
+            let eVitamin = '400–800 NE/nap';
+            let b12Vitamin = '500–1000 mcg/nap (metilkobalamin forma)';
+            let selenium = '200–300 mcg/nap';
+            let iodine = '200–300 mcg/nap';
+            let calcium = '1000–1500 mg/nap' + (age > 50 ? ' (idősebb kor miatt felső tartomány)' : '');
+            let omega3 = '2–4 g/nap';
 
-        document.getElementById('results').innerHTML = results;
-    }
+            const results = `
+                <h2 class="text-2xl font-bold mb-4">Személyre szabott ajánlás</h2>
+                <p><strong>Adatok:</strong> ${weight} kg, ${height} cm, ${age} év (${gender === 'male' ? 'férfi' : 'nő'})</p>
+                <p><strong>Becsült napi kalóriaigény:</strong> ${dailyCalories} kcal (könnyű aktivitás esetén)</p>
 
-    // Oldal betöltéskor azonnal számol az alapértékekkel
-    window.onload = calculate;
-</script>
+                <h3 class="text-xl mt-8 mb-4">Makrotápanyagok</h3>
+                <ul class="space-y-4">
+                    <li>
+                        <strong>Fehérje:</strong> ${proteinMin}–${proteinMax} g/nap (1,4–1,7 g/kg)<br>
+                        <small>→ ${proteinKcalMin}–${proteinKcalMax} kcal (kb. ${(Math.round(proteinKcalMin / dailyCalories * 100))}–${(Math.round(proteinKcalMax / dailyCalories * 100))}% a napi energiából)</small>
+                    </li>
+                    <li>
+                        <strong>Szénhidrát:</strong> ${carbsMin}–${carbsMax} g/nap<br>
+                        <small>→ ${carbsKcalMin}–${carbsKcalMax} kcal (45–65% a napi energiából)</small>
+                    </li>
+                    <li>
+                        <strong>Zsír:</strong> ${fatMin}–${fatMax} g/nap<br>
+                        <small>→ ${fatKcalMin}–${fatKcalMax} kcal (20–35% a napi energiából)</small>
+                    </li>
+                </ul>
+
+                <h3 class="text-xl mt-8 mb-4">Vitaminok és ásványi anyagok (optimális tartomány gyulladáscsökkentő étrendhez)</h3>
+                <p>A dózisok életkor, nem és súly alapján adjustálva (RDA alapú, de magasabb optimális szinten).</p>
+
+                <details open><summary><strong>D-vitamin</strong></summary>
+                    <p>${dVitamin}</p>
+                    <p>Télen-nyáron pótlás, K2-vitaminnal és magnéziummal együtt.</p>
+                </details>
+                <details><summary><strong>K2-vitamin</strong></summary><p>${k2Vitamin}</p></details>
+                <details><summary><strong>C-vitamin</strong></summary><p>${cVitamin}</p></details>
+                <details><summary><strong>E-vitamin</strong></summary><p>${eVitamin}</p></details>
+                <details><summary><strong>B12-vitamin</strong></summary><p>${b12Vitamin}</p></details>
+                <details><summary><strong>Magnézium</strong></summary><p>${magnesium}</p></details>
+                <details><summary><strong>Cink</strong></summary><p>${zinc}</p></details>
+                <details><summary><strong>Szelén</strong></summary><p>${selenium}</p></details>
+                <details><summary><strong>Jód</strong></summary><p>${iodine}</p></details>
+                <details><summary><strong>Króm</strong></summary><p>${chromium}</p></details>
+                <details><summary><strong>Kalcium</strong></summary><p>${calcium}</p></details>
+                <details><summary><strong>Omega-3 (EPA+DHA)</strong></summary><p>${omega3}</p></details>
+
+                <h3 class="text-xl mt-8 mb-4">Általános tanácsok</h3>
+                <ul class="list-disc pl-6 space-y-2">
+                    <li>Aktív, jól felszívódó formákat válassz (pl. metilkobalamin, biszglicinát).</li>
+                    <li>A legfontosabbakat (D3, K2, magnézium, C, E, B12) <strong>külön-külön</strong> szedd, ne csak multivitaminban.</li>
+                    <li>D-vitamin + K2 + magnézium hármas együtt a legjobb a kalcium-anyagcserehez.</li>
+                    <li>Mindig konzultálj orvossal vérvétel alapján egyéni finomhangoláshoz.</li>
+                </ul>
+            `;
+
+            document.getElementById('results').innerHTML = results;
+        }
+
+        // Automatikus számítás betöltéskor
+        window.onload = calculate;
+    </script>
 </body>
 </html>
