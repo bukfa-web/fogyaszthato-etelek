@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Személyre Szabott Tápanyag Ajánlás</title>
+    <link rel="manifest" href="/fogyaszthato-etelek/manifest.json">
+    <link rel="icon" href="/fogyaszthato-etelek/icon-192x192.png" sizes="192x192">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #121212; color: #e0e0e0; font-family: Arial, sans-serif; }
+        details { background-color: #1f1f1f; margin: 10px 0; padding: 10px; border-radius: 8px; border: 1px solid #333; }
+        summary { cursor: pointer; font-weight: bold; color: #bb86fc; }
+        .back-link { text-align: center; margin: 30px 0; }
+        a { color: #03dac6; }
+    </style>
+</head>
+<body class="p-6">
+    <h1 class="text-3xl font-bold text-center mb-6">Személyre Szabott Tápanyag Ajánlás</h1>
+    
+    <div class="max-w-2xl mx-auto bg-gray-800 p-6 rounded-lg">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div>
+                <label class="block mb-2">Testsúly (kg)</label>
+                <input type="number" id="weight" value="110" class="w-full p-2 bg-gray-700 rounded">
+            </div>
+            <div>
+                <label class="block mb-2">Magasság (cm)</label>
+                <input type="number" id="height" value="193" class="w-full p-2 bg-gray-700 rounded">
+            </div>
+            <div>
+                <label class="block mb-2">Életkor (év)</label>
+                <input type="number" id="age" value="62" class="w-full p-2 bg-gray-700 rounded">
+            </div>
+        </div>
+        <div class="text-center">
+            <button onclick="calculate()" class="px-6 py-3 bg-blue-600 rounded hover:bg-blue-700">Számítás</button>
+        </div>
+    </div>
+
+    <div id="results" class="max-w-4xl mx-auto mt-10"></div>
+
+    <div class="back-link">
+        <a href="/fogyaszthato-etelek/">← Vissza az Étel Adatbázishoz</a> |
+        <a href="/fogyaszthato-etelek/tapanyag-ajanlas.html">Statikus Ajánlás (110 kg-os férfi)</a>
+    </div>
+
+    <script>
+        function calculate() {
+            const weight = parseFloat(document.getElementById('weight').value) || 110;
+            const height = parseFloat(document.getElementById('height').value) || 193;
+            const age = parseFloat(document.getElementById('age').value) || 62;
+
+            // Becsült napi kalóriaigény (Harris-Benedict képlet, férfi, ülő életmód)
+            const bmr = 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age);
+            const dailyCalories = Math.round(bmr * 1.2); // könnyű aktivitás szorzó
+
+            // Makrotápanyagok
+            const proteinMin = Math.round(1.4 * weight);
+            const proteinMax = Math.round(1.7 * weight);
+            const fatMin = Math.round(dailyCalories * 0.20 / 9);
+            const fatMax = Math.round(dailyCalories * 0.35 / 9);
+            const carbsMin = Math.round(dailyCalories * 0.45 / 4);
+            const carbsMax = Math.round(dailyCalories * 0.65 / 4);
+
+            const results = `
+                <h2 class="text-2xl font-bold mb-4">Számított ajánlások (${weight} kg, ${height} cm, ${age} év)</h2>
+                <p><strong>Becsült napi kalóriaigény:</strong> ~${dailyCalories} kcal</p>
+
+                <h3 class="text-xl mt-6 mb-3">Makrotápanyagok</h3>
+                <ul class="list-disc pl-6">
+                    <li><strong>Fehérje:</strong> ${proteinMin}–${proteinMax} g/nap (1,4–1,7 g/kg)</li>
+                    <li><strong>Szénhidrát:</strong> ${carbsMin}–${carbsMax} g/nap (45–65%)</li>
+                    <li><strong>Zsír:</strong> ${fatMin}–${fatMax} g/nap (20–35%)</li>
+                </ul>
+
+                <h3 class="text-xl mt-6 mb-3">Vitaminok és ásványi anyagok (optimális tartomány gyulladáscsökkentő étrendhez)</h3>
+                <p>These mostly fixed high doses, lightly adjusted where relevant (e.g., D-vitamin testsúly szerint kissé).</p>
+
+                <details open><summary><strong>D-vitamin</strong></summary>
+                    <p>8000–12000 NE (testsúly >100 kg esetén inkább a felső tartomány)</p></details>
+                <details><summary><strong>K2-vitamin</strong></summary><p>100–150 mcg</p></details>
+                <details><summary><strong>C-vitamin</strong></summary><p>1000–2000 mg</p></details>
+                <details><summary><strong>E-vitamin</strong></summary><p>400–800 NE</p></details>
+                <details><summary><strong>B12-vitamin (metilkobalamin)</strong></summary><p>500–1000 mcg</p></details>
+                <details><summary><strong>Magnézium (biszglicinát)</strong></summary><p>600–800 mg</p></details>
+                <details><summary><strong>Cink</strong></summary><p>20–30 mg</p></details>
+                <details><summary><strong>Szelén</strong></summary><p>200–300 mcg</p></details>
+                <details><summary><strong>Jód</strong></summary><p>200–300 mcg</p></details>
+                <details><summary><strong>Króm</strong></summary><p>200–400 mcg</p></details>
+                <details><summary><strong>Kalcium</strong></summary><p>1000–1500 mg</p></details>
+                <details><summary><strong>Omega-3</strong></summary><p>2–4 g</p></details>
+
+                <h3 class="text-xl mt-6 mb-3">Tanácsok</h3>
+                <ul class="list-disc pl-6">
+                    <li>Aktív formákat válassz!</li>
+                    <li>D + K2 + magnézium együtt a legjobb.</li>
+                    <li>Konzultálj orvossal egyéni igény esetén.</li>
+                </ul>
+            `;
+
+            document.getElementById('results').innerHTML = results;
+        }
+
+        // Oldal betöltéskor automatikus számítás az alapértékekkel
+        window.onload = calculate;
+    </script>
+</body>
+</html>
