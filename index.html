@@ -92,12 +92,12 @@
         let currentData = [];
         let editingName = null;
 
-        // Adatok betöltése JSON fájlból (foodData.json)
+        // Adatok betöltése a fooddata.json-ból
         function loadFoodData() {
-            fetch('./foodData.json')
+            fetch('./fooddata.json')
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error('Hiba a foodData.json betöltésekor');
+                        throw new Error('Hiba a fooddata.json betöltésekor: ' + response.status);
                     }
                     return response.json();
                 })
@@ -113,7 +113,7 @@
                 })
                 .catch(error => {
                     console.error('Betöltési hiba:', error);
-                    alert('Nem sikerült betölteni az étel adatbázist. Ellenőrizd a foodData.json fájlt!');
+                    alert('Nem sikerült betölteni az étel adatbázist. Ellenőrizd a fooddata.json fájlt!');
                 });
         }
 
@@ -165,7 +165,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'foodData.json';
+            a.download = 'fooddata.json';
             a.click();
             URL.revokeObjectURL(url);
         }
