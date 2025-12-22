@@ -30,7 +30,7 @@
 
     <div class="max-w-6xl mx-auto">
         <div class="flex flex-wrap gap-2 mb-6">
-            <input type="text" id="searchInput" placeholder="Keresés névben..." class="flex-1 min-w-64 p-3 bg-gray-700 rounded-lg text-white border border-gray-600 focus:border-cyan-500 outline-none">
+            <input type="text" id="searchInput" placeholder="Keresés névben..." class="flex-1 min-w-64 p-3 bg-gray-700 rounded-lg text-white border border-gray-600">
             <button id="clearSearchButton" class="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-lg font-medium">Törlés</button>
             <button id="resetFiltersButton" class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-3 rounded-lg font-medium">Reset</button>
             <select id="recommendationFilter" class="bg-gray-700 text-white px-5 py-3 rounded-lg border border-gray-600">
@@ -70,7 +70,7 @@
         let filteredData = [];
         let sortColumn = 'name';
         let sortDirection = 'asc';
-        let editingRow = null; // jelenleg szerkesztett sor
+        let editingRow = null;
 
         function loadData() {
             const saved = localStorage.getItem('foodData');
@@ -87,7 +87,7 @@
 
         function populateGroupFilter() {
             const groupFilter = document.getElementById('groupFilter');
-            const groups = [...new Set(foodData.map(item => item.group || 'Ismeretlen').filter(Boolean))].sort();
+            const groups = [...new Set(foodData.map(item => item.group).filter(Boolean))].sort();
             groupFilter.innerHTML = '<option value="">Minden csoport</option>';
             groups.forEach(group => {
                 const opt = document.createElement('option');
@@ -102,7 +102,7 @@
 
             const search = document.getElementById('searchInput').value.trim().toLowerCase();
             if (search) {
-                data = data.filter(item => item.name.toLowerCase().includes(search));
+                data = data.filter(item => (item.name || '').toLowerCase().includes(search));
             }
 
             const rec = document.getElementById('recommendationFilter').value;
@@ -139,19 +139,19 @@
                 return;
             }
 
-            filteredData.forEach((item, index) => {
+            filteredData.forEach(item => {
                 const tr = document.createElement('tr');
-                tr.dataset.index = index;
                 tr.className = item.recommendation === 'Igen Kérek' 
                     ? 'bg-green-900/30 hover:bg-green-900/50' 
                     : 'bg-red-900/30 hover:bg-red-900/50';
 
                 tr.innerHTML = `
-                    <td class="p-4 border-r border-gray-700" ondblclick="startEdit(this, 'name')">${escapeHtml(item.name)}</td>
+                    <td class="p-4 border-r border-gray-700" ondblclick="startEdit(this, 'name')">${escapeHtml(item.name || '')}</td>
                     <td class="p-4 border-r border-gray-700" ondblclick="startEdit(this, 'group')">${escapeHtml(item.group || '')}</td>
                     <td class="p-4 border-r border-gray-700" ondblclick="startEdit(this, 'recommendation')">${escapeHtml(item.recommendation || '')}</td>
                     <td class="p-4 border-r border-gray-700" ondblclick="startEdit(this, 'note')">${escapeHtml(item.note || '')}</td>
-                    <td class="p-4 text-center">
+                    <td class="p-4 text-center space-x-2">
+                        <button class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-1 rounded text-sm edit-btn">Szerk.</button>
                         <button class="bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded text-sm delete-btn">Töröl</button>
                     </td>
                 `;
@@ -168,6 +168,7 @@
         }
 
         function addEventListeners() {
+            // Törlés
             document.querySelectorAll('.delete-btn').forEach(btn => {
                 btn.onclick = () => {
                     if (confirm('Biztosan törlöd ezt az ételt?')) {
@@ -180,15 +181,24 @@
                     }
                 };
             });
+
+            // Szerkesztés gomb (indítja az inline szerkesztést az első cellán)
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.onclick = () => {
+                    const row = btn.closest('tr');
+                    const firstCell = row.cells[0];
+                    startEdit(firstCell, 'name');
+                };
+            });
         }
 
         function startEdit(cell, field) {
-            if (editingRow !== null) {
+            if (editingRow !== null && editingRow !== cell.parentElement) {
                 cancelEdit();
             }
 
             editingRow = cell.parentElement;
-            const originalValue = cell.textContent;
+            const originalValue = cell.textContent.trim();
 
             let input;
             if (field === 'recommendation') {
@@ -198,6 +208,7 @@
                     <option value="Köszönöm nem kérek">Köszönöm nem kérek</option>
                 `;
                 input.value = originalValue;
+                input.className = 'bg-gray-700 text-white px-2 py-1 rounded border border-cyan-500';
             } else {
                 input = document.createElement('input');
                 input.type = 'text';
@@ -217,32 +228,35 @@
             cell.innerHTML = '';
             cell.appendChild(input);
             input.focus();
-            if (input.select) input.select();
+            if (input.tagName === 'INPUT') input.select();
         }
 
         function saveEdit(field, newValue) {
-            if (editingRow === null) return;
+            if (!editingRow) return;
 
-            const index = filteredData[editingRow.dataset.index];
-            const originalItem = foodData.find(item => item.name === index.name && item.group === index.group);
+            const nameCell = editingRow.cells[0];
+            const originalName = nameCell.textContent.trim() || nameCell.querySelector('input')?.value || '';
 
-            if (originalItem) {
-                if (field === 'name' && newValue === '') {
-                    alert('A megnevezés nem lehet üres!');
-                    cancelEdit();
-                    return;
-                }
+            const item = foodData.find(i => i.name.trim() === originalName);
 
-                originalItem[field] = newValue;
-
-                if (field === 'group') {
-                    populateGroupFilter();
-                }
-
-                saveToLocalStorage();
-                applyFiltersAndSort();
+            if (!item) {
+                cancelEdit();
+                return;
             }
 
+            if (field === 'name' && newValue === '') {
+                alert('A megnevezés nem lehet üres!');
+                cancelEdit();
+                return;
+            }
+
+            item[field] = newValue;
+
+            saveToLocalStorage();
+            if (field === 'group') {
+                populateGroupFilter();
+            }
+            applyFiltersAndSort();
             editingRow = null;
         }
 
@@ -267,7 +281,9 @@
         }
 
         function handleSort(e) {
-            const column = e.target.closest('th').dataset.sort;
+            const th = e.target.closest('th');
+            if (!th || !th.dataset.sort) return;
+            const column = th.dataset.sort;
             if (sortColumn === column) {
                 sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
             } else {
@@ -302,12 +318,7 @@
             URL.revokeObjectURL(url);
         });
         document.getElementById('importInput').addEventListener('change', importData);
-
-        document.querySelectorAll('th[data-sort]').forEach(th => {
-            th.addEventListener('click', handleSort);
-        });
-
-        // Kattintás máshová → szerkesztés mentése vagy elvetése
+        document.querySelector('thead').addEventListener('click', handleSort);
         document.addEventListener('click', (e) => {
             if (editingRow && !editingRow.contains(e.target)) {
                 cancelEdit();
@@ -324,7 +335,7 @@
                     if (!Array.isArray(imported)) throw new Error('Nem tömb');
                     let added = 0;
                     imported.forEach(newItem => {
-                        if (!foodData.some(item => item.name.toLowerCase().trim() === (newItem.name || '').toLowerCase().trim())) {
+                        if (!foodData.some(item => (item.name || '').toLowerCase().trim() === (newItem.name || '').toLowerCase().trim())) {
                             foodData.push(newItem);
                             added++;
                         }
