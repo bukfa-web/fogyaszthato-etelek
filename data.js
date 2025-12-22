@@ -1,6 +1,6 @@
 const initialFoodData = [
   {
-    "name": "Áfonya",
+    "name": "Áfonya teszt",
     "group": "Gyümölcsök",
     "recommendation": "Igen Kérek",
     "note": "Antioxidánsokban gazdag, szezonálisan kis mennyiségben"
