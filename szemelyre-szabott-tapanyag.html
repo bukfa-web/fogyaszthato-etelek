@@ -35,7 +35,7 @@
             <div>
                 <label class="block mb-2">Nem</label>
                 <select id="gender" class="w-full p-2 bg-gray-700 rounded">
-                    <option value="male">Férfi</option>
+                    <option value="male" selected>Férfi</option>
                     <option value="female">Nő</option>
                 </select>
             </div>
@@ -59,8 +59,6 @@
         <a href="/fogyaszthato-etelek/">← Vissza az Étel Adatbázishoz</a> |
         <a href="/fogyaszthato-etelek/tapanyag-ajanlas.html">Statikus Ajánlás (110 kg-os férfi)</a>
     </div>
-
-    <!-- A JAVÍTOTT SCRIPT RÉSZ ITT KEZDŐDIK -->
     <script>
         function calculate() {
             const weight = parseFloat(document.getElementById('weight').value) || 110;
@@ -96,53 +94,53 @@
             if (weight > 70) dVitaminBase += Math.round((weight - 70) * 5);
             if (age > 60) dVitaminBase += 2000;
             if (activityLevel > 1.55) dVitaminBase += 1000;
-            let dVitamin = `${dVitaminBase}–${dVitaminBase + 4000} NE/nap (testsúly, életkor és aktivitás függő)`;
-            let dVitaminNote = 'Télen-nyáron pótlás, K2-vitaminnal és magnéziummal együtt.';
+            let dVitamin = dVitaminBase + "–" + (dVitaminBase + 4000) + " NE/nap (testsúly, életkor és aktivitás függő)";
+            let dVitaminNote = "Télen-nyáron pótlás, K2-vitaminnal és magnéziummal együtt.";
 
-            let k2Vitamin = '100–150 mcg/nap (nem függ jelentősen testsúlytól, életkortól vagy aktivitástól)';
+            let k2Vitamin = "100–150 mcg/nap (nem függ jelentősen testsúlytól, életkortól vagy aktivitástól)";
 
             let cVitaminBase = 1000;
             if (age > 50) cVitaminBase += 200;
             if (activityLevel > 1.375) cVitaminBase += 500;
             if (activityLevel > 1.55) cVitaminBase += 500;
-            let cVitamin = `${cVitaminBase}–${cVitaminBase + 1000} mg/nap (aktivitás és életkor függő)`;
+            let cVitamin = cVitaminBase + "–" + (cVitaminBase + 1000) + " mg/nap (aktivitás és életkor függő)";
 
-            let eVitamin = '400–800 NE/nap (nem függ jelentősen testsúlytól, életkortól vagy aktivitástól)';
+            let eVitamin = "400–800 NE/nap (nem függ jelentősen testsúlytól, életkortól vagy aktivitástól)";
 
             let b12Base = 500;
             if (age > 50) b12Base += 300;
-            let b12Vitamin = `${b12Base}–${b12Base + 500} mcg/nap (metilkobalamin forma; életkor függő)';
+            let b12Vitamin = b12Base + "–" + (b12Base + 500) + " mcg/nap (metilkobalamin forma; életkor függő)";
 
             let magnesiumBase = Math.round(6 * weight);
             if (gender === 'male') magnesiumBase += 50;
             if (activityLevel > 1.375) magnesiumBase = Math.round(magnesiumBase * 1.1);
             if (activityLevel > 1.55) magnesiumBase = Math.round(magnesiumBase * 1.2);
-            let magnesium = `${magnesiumBase - 100}–${magnesiumBase + 100} mg/nap (biszglicinát; testsúly, nem és aktivitás függő)`;
+            let magnesium = (magnesiumBase - 100) + "–" + (magnesiumBase + 100) + " mg/nap (biszglicinát; testsúly, nem és aktivitás függő)";
 
             let zincBase = gender === 'male' ? 20 : 15;
             if (activityLevel > 1.55) zincBase += 5;
-            let zinc = `${zincBase}–${zincBase + 10} mg/nap (nem és aktivitás függő; testsúly nem befolyásolja jelentősen)`;
+            let zinc = zincBase + "–" + (zincBase + 10) + " mg/nap (nem és aktivitás függő; testsúly nem befolyásolja jelentősen)";
 
             let seleniumBase = 200;
             if (age > 60) seleniumBase += 50;
-            let selenium = `${seleniumBase}–${seleniumBase + 100} mcg/nap (életkor függő; aktivitás és súly nem befolyásolja jelentősen)`;
+            let selenium = seleniumBase + "–" + (seleniumBase + 100) + " mcg/nap (életkor függő; aktivitás és súly nem befolyásolja jelentősen)";
 
             let iodineBase = 200;
             if (gender === 'female' && age > 18) iodineBase += 50;
-            let iodine = `${iodineBase}–${iodineBase + 100} mcg/nap (nem függő; életkor, súly és aktivitás nem befolyásolja jelentősen)`;
+            let iodine = iodineBase + "–" + (iodineBase + 100) + " mcg/nap (nem függő; életkor, súly és aktivitás nem befolyásolja jelentősen)";
 
             let chromiumBase = 200;
             if (age > 50) chromiumBase -= 50;
-            let chromium = `${chromiumBase}–${chromiumBase + 200} mcg/nap (életkor függő; súly és aktivitás nem befolyásolja jelentősen)`;
+            let chromium = chromiumBase + "–" + (chromiumBase + 200) + " mcg/nap (életkor függő; súly és aktivitás nem befolyásolja jelentősen)";
 
             let calciumBase = 1000;
             if (age > 50 && gender === 'female') calciumBase += 200;
             if (activityLevel > 1.55) calciumBase += 100;
-            let calcium = `${calciumBase}–${calciumBase + 500} mg/nap (nem, életkor és aktivitás függő; súly nem befolyásolja jelentősen)`;
+            let calcium = calciumBase + "–" + (calciumBase + 500) + " mg/nap (nem, életkor és aktivitás függő; súly nem befolyásolja jelentősen)";
 
             let omega3Base = 2;
             if (activityLevel > 1.55) omega3Base += 1;
-            let omega3 = `${omega3Base}–${omega3Base + 2} g/nap (aktivitás függő; életkor és súly nem befolyásolja jelentősen)`;
+            let omega3 = omega3Base + "–" + (omega3Base + 2) + " g/nap (aktivitás függő; életkor és súly nem befolyásolja jelentősen)";
 
             const results = `
                 <h2 class="text-2xl font-bold mb-4">Személyre szabott ajánlás</h2>
@@ -180,7 +178,6 @@
             document.getElementById('results').innerHTML = results;
         }
 
-        // Automatikus indítás betöltéskor
         window.onload = calculate;
     </script>
 </body>
