@@ -46,64 +46,85 @@
     </div>
 
     <script>
-        function calculate() {
-            const weight = parseFloat(document.getElementById('weight').value) || 110;
-            const height = parseFloat(document.getElementById('height').value) || 193;
-            const age = parseFloat(document.getElementById('age').value) || 62;
+    function calculate() {
+        const weight = parseFloat(document.getElementById('weight').value) || 110;
+        const height = parseFloat(document.getElementById('height').value) || 193;
+        const age = parseFloat(document.getElementById('age').value) || 62;
 
-            // Becsült napi kalóriaigény (Harris-Benedict képlet, férfi, ülő életmód)
-            const bmr = 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age);
-            const dailyCalories = Math.round(bmr * 1.2); // könnyű aktivitás szorzó
+        // Harris-Benedict képlet (férfi, ülő/könnyű aktivitás: 1.2 szorzó)
+        const bmr = 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age);
+        const dailyCalories = Math.round(bmr * 1.2);
 
-            // Makrotápanyagok
-            const proteinMin = Math.round(1.4 * weight);
-            const proteinMax = Math.round(1.7 * weight);
-            const fatMin = Math.round(dailyCalories * 0.20 / 9);
-            const fatMax = Math.round(dailyCalories * 0.35 / 9);
-            const carbsMin = Math.round(dailyCalories * 0.45 / 4);
-            const carbsMax = Math.round(dailyCalories * 0.65 / 4);
+        // Makrotápanyagok számítása
+        const proteinMin = Math.round(1.4 * weight);
+        const proteinMax = Math.round(1.7 * weight);
+        const proteinKcalMin = proteinMin * 4;
+        const proteinKcalMax = proteinMax * 4;
 
-            const results = `
-                <h2 class="text-2xl font-bold mb-4">Számított ajánlások (${weight} kg, ${height} cm, ${age} év)</h2>
-                <p><strong>Becsült napi kalóriaigény:</strong> ~${dailyCalories} kcal</p>
+        const carbsMin = Math.round(dailyCalories * 0.45 / 4);
+        const carbsMax = Math.round(dailyCalories * 0.65 / 4);
+        const carbsKcalMin = carbsMin * 4;
+        const carbsKcalMax = carbsMax * 4;
 
-                <h3 class="text-xl mt-6 mb-3">Makrotápanyagok</h3>
-                <ul class="list-disc pl-6">
-                    <li><strong>Fehérje:</strong> ${proteinMin}–${proteinMax} g/nap (1,4–1,7 g/kg)</li>
-                    <li><strong>Szénhidrát:</strong> ${carbsMin}–${carbsMax} g/nap (45–65%)</li>
-                    <li><strong>Zsír:</strong> ${fatMin}–${fatMax} g/nap (20–35%)</li>
-                </ul>
+        const fatMin = Math.round(dailyCalories * 0.20 / 9);
+        const fatMax = Math.round(dailyCalories * 0.35 / 9);
+        const fatKcalMin = fatMin * 9;
+        const fatKcalMax = fatMax * 9;
 
-                <h3 class="text-xl mt-6 mb-3">Vitaminok és ásványi anyagok (optimális tartomány gyulladáscsökkentő étrendhez)</h3>
-                <p>These mostly fixed high doses, lightly adjusted where relevant (e.g., D-vitamin testsúly szerint kissé).</p>
+        const results = `
+            <h2 class="text-2xl font-bold mb-4">Személyre szabott ajánlás</h2>
+            <p><strong>Adatok:</strong> ${weight} kg, ${height} cm, ${age} év (férfi)</p>
+            <p><strong>Becsült napi kalóriaigény:</strong> ${dailyCalories} kcal (könnyű aktivitás esetén)</p>
 
-                <details open><summary><strong>D-vitamin</strong></summary>
-                    <p>8000–12000 NE (testsúly >100 kg esetén inkább a felső tartomány)</p></details>
-                <details><summary><strong>K2-vitamin</strong></summary><p>100–150 mcg</p></details>
-                <details><summary><strong>C-vitamin</strong></summary><p>1000–2000 mg</p></details>
-                <details><summary><strong>E-vitamin</strong></summary><p>400–800 NE</p></details>
-                <details><summary><strong>B12-vitamin (metilkobalamin)</strong></summary><p>500–1000 mcg</p></details>
-                <details><summary><strong>Magnézium (biszglicinát)</strong></summary><p>600–800 mg</p></details>
-                <details><summary><strong>Cink</strong></summary><p>20–30 mg</p></details>
-                <details><summary><strong>Szelén</strong></summary><p>200–300 mcg</p></details>
-                <details><summary><strong>Jód</strong></summary><p>200–300 mcg</p></details>
-                <details><summary><strong>Króm</strong></summary><p>200–400 mcg</p></details>
-                <details><summary><strong>Kalcium</strong></summary><p>1000–1500 mg</p></details>
-                <details><summary><strong>Omega-3</strong></summary><p>2–4 g</p></details>
+            <h3 class="text-xl mt-8 mb-4">Makrotápanyagok</h3>
+            <ul class="space-y-4">
+                <li>
+                    <strong>Fehérje:</strong> ${proteinMin}–${proteinMax} g/nap (1,4–1,7 g/kg)<br>
+                    <small>→ ${proteinKcalMin}–${proteinKcalMax} kcal (kb. ${(Math.round(proteinKcalMin / dailyCalories * 100))}–${(Math.round(proteinKcalMax / dailyCalories * 100))}% a napi energiából)</small>
+                </li>
+                <li>
+                    <strong>Szénhidrát:</strong> ${carbsMin}–${carbsMax} g/nap<br>
+                    <small>→ ${carbsKcalMin}–${carbsKcalMax} kcal (45–65% a napi energiából)</small>
+                </li>
+                <li>
+                    <strong>Zsír:</strong> ${fatMin}–${fatMax} g/nap<br>
+                    <small>→ ${fatKcalMin}–${fatKcalMax} kcal (20–35% a napi energiából)</small>
+                </li>
+            </ul>
 
-                <h3 class="text-xl mt-6 mb-3">Tanácsok</h3>
-                <ul class="list-disc pl-6">
-                    <li>Aktív formákat válassz!</li>
-                    <li>D + K2 + magnézium együtt a legjobb.</li>
-                    <li>Konzultálj orvossal egyéni igény esetén.</li>
-                </ul>
-            `;
+            <h3 class="text-xl mt-8 mb-4">Vitaminok és ásványi anyagok (optimális tartomány gyulladáscsökkentő étrendhez)</h3>
+            <p>A legtöbb javasolt dózis fix, magas tartományban marad (testsúlytól függetlenül optimális).</p>
 
-            document.getElementById('results').innerHTML = results;
-        }
+            <details open><summary><strong>D-vitamin</strong></summary>
+                <p>8000–12000 NE/nap${weight > 100 ? ' (testsúlyod miatt inkább a felső tartomány javasolt)' : ''}</p>
+                <p>Télen-nyáron pótlás, K2-vitaminnal és magnéziummal együtt.</p>
+            </details>
+            <details><summary><strong>K2-vitamin</strong></summary><p>100–150 mcg/nap</p></details>
+            <details><summary><strong>C-vitamin</strong></summary><p>1000–2000 mg/nap</p></details>
+            <details><summary><strong>E-vitamin</strong></summary><p>400–800 NE/nap</p></details>
+            <details><summary><strong>B12-vitamin (metilkobalamin forma)</strong></summary><p>500–1000 mcg/nap</p></details>
+            <details><summary><strong>Magnézium (biszglicinát)</strong></summary><p>600–800 mg/nap</p></details>
+            <details><summary><strong>Cink</strong></summary><p>20–30 mg/nap</p></details>
+            <details><summary><strong>Szelén</strong></summary><p>200–300 mcg/nap</p></details>
+            <details><summary><strong>Jód</strong></summary><p>200–300 mcg/nap</p></details>
+            <details><summary><strong>Króm</strong></summary><p>200–400 mcg/nap</p></details>
+            <details><summary><strong>Kalcium</strong></summary><p>1000–1500 mg/nap</p></details>
+            <details><summary><strong>Omega-3 (EPA+DHA)</strong></summary><p>2–4 g/nap</p></details>
 
-        // Oldal betöltéskor automatikus számítás az alapértékekkel
-        window.onload = calculate;
-    </script>
+            <h3 class="text-xl mt-8 mb-4">Általános tanácsok</h3>
+            <ul class="list-disc pl-6 space-y-2">
+                <li>Aktív, jól felszívódó formákat válassz (pl. metilkobalamin, biszglicinát).</li>
+                <li>A legfontosabbakat (D3, K2, magnézium, C, E, B12) <strong>külön-külön</strong> szedd, ne csak multivitaminban.</li>
+                <li>D-vitamin + K2 + magnézium hármas együtt a legjobb a kalcium-anyagcseréhez.</li>
+                <li>Mindig konzultálj orvossal vérvétel alapján egyéni finomhangoláshoz.</li>
+            </ul>
+        `;
+
+        document.getElementById('results').innerHTML = results;
+    }
+
+    // Oldal betöltéskor azonnal számol az alapértékekkel
+    window.onload = calculate;
+</script>
 </body>
 </html>
