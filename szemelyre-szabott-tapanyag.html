@@ -35,8 +35,8 @@
             <div>
                 <label class="block mb-2">Nem</label>
                 <select id="gender" class="w-full p-2 bg-gray-700 rounded">
-                    <option value="male" selected>Férfi</option>
-                    <option value="female">Nő</option>
+                    <option value="male">Férfi</option>
+                    <option value="female" selected>Nő</option>
                 </select>
             </div>
             <div>
@@ -87,7 +87,7 @@
             const fatMax = Math.round(dailyCalories * 0.35 / 9);
             const fatKcalMin = fatMin * 9;
             const fatKcalMax = fatMax * 9;
-            // Vitaminok/ásványi anyagok konkretizálva
+            // Vitaminok konkretizálva
             let dVitaminBase = 8000;
             if (weight > 70) dVitaminBase += Math.round((weight - 70) * 5);
             if (age > 60) dVitaminBase += 2000;
@@ -99,7 +99,7 @@
             if (age > 50) cVitaminBase += 200;
             if (activityLevel > 1.375) cVitaminBase += 500;
             if (activityLevel > 1.55) cVitaminBase += 500;
-            let cVitamin = `${cVitaminBase}–${cVitaminBase + 1000} mg/nap (aktivitás és életkor függő)`;
+            let cVitamin = `${cVitaminBase}–${cVitaminBase + 1000} mg/nap (aktivitás és életkor függő)';
             let eVitamin = '400–800 NE/nap (nem függ jelentősen testsúlytól, életkortól vagy aktivitástól)';
             let b12Base = 500;
             if (age > 50) b12Base += 300;
