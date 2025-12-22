@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tápanyag Ajánlás - Étel Adatbázis</title>
+    <meta name="description" content="Ajánlott napi tápanyag-bevitel egy 193 cm magas, 110 kg-os, 62 éves férfi számára (egészséges, gyulladáscsökkentő étrendhez)">
+    
+    <!-- PWA ikonok és manifest (ugyanaz, mint az index-en) -->
+    <link rel="manifest" href="/fogyaszthato-etelek/manifest.json">
+    <link rel="icon" href="/fogyaszthato-etelek/icon-192x192.png" sizes="192x192">
+    <link rel="apple-touch-icon" href="/fogyaszthato-etelek/icon-512x512.png">
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        header {
+            text-align: center;
+            padding: 20px;
+            background-color: #1f1f1f;
+            margin-bottom: 30px;
+        }
+        h1 { color: #ffffff; }
+        h2, h3 { color: #bb86fc; }
+        a { color: #03dac6; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        ul { padding-left: 20px; }
+        details {
+            background-color: #1f1f1f;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+        summary {
+            cursor: pointer;
+            font-weight: bold;
+            color: #bb86fc;
+        }
+        .back-link {
+            display: block;
+            text-align: center;
+            margin: 30px 0;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Tápanyag Ajánlás</h1>
+        <p>Egy 193 cm magas, 110 kg-os, 62 éves férfi számára<br>
+           (gyulladáscsökkentő, módosított paleo-szerű étrendhez igazítva)</p>
+    </header>
+
+    <nav class="back-link">
+        <a href="/fogyaszthato-etelek/">← Vissza az Étel Adatbázishoz</a>
+    </nav>
+
+    <h2>Makrotápanyagok (napi ajánlott mennyiség)</h2>
+    <ul>
+        <li><strong>Fehérje:</strong> 154–187 g (1,4–1,7 g/testsúlykg)</li>
+        <li><strong>Szénhidrát:</strong> 247–450 g (a napi kalóriabevitel 45–65%-a)</li>
+        <li><strong>Zsír:</strong> 70–122 g (a napi kalóriabevitel 20–35%-a)</li>
+    </ul>
+
+    <h2>Legfontosabb vitaminok és ásványi anyagok</h2>
+
+    <details open>
+        <summary><strong>D-vitamin</strong></summary>
+        <p><strong>Ajánlott napi mennyiség:</strong> 8000–12 000 NE (minimum 4000–12 000 NE, akár 10 000 NE télen-nyáron)</p>
+        <p>Elengedhetetlen a kalcium felszívódásához. K2-vitaminnal és magnéziummal együtt szedendő.</p>
+    </details>
+
+    <details>
+        <summary><strong>K2-vitamin</strong></summary>
+        <p><strong>Ajánlott napi mennyiség:</strong> 100–150 mcg (minimum 75–100 mcg)</p>
+        <p>Kulcsszerep a kalcium csontokba és erekbe épülésében.</p>
+    </details>
+
+    <details>
+        <summary><strong>C-vitamin</strong></summary>
+        <p><strong>Ajánlott napi mennyiség:</strong> 1000–2000 mg (minimum 500–1000 mg)</p>
+        <p>Erős antioxidáns, immunrendszer-támogató, kollagénszintézishez szükséges.</p>
+    </details>
+
+    <details>
+        <summary><strong>E-vitamin</strong></summary>
+        <p><strong>Ajánlott napi mennyiség:</strong> 400–800 NE (vagy 200–400 NE)</p>
+        <p>Antioxidáns, védi a sejteket az oxidatív stressztől.</p>
+    </details>
+
+    <details>
+        <summary><strong>B12-vitamin</strong></summary>
+        <p><strong>Ajánlott napi mennyiség:</strong> 500–1000 mcg (kizárólag metilkobalamin forma)</p>
+        <p>Kerülendő a cianokobalamin. Energiatermelés, idegrendszer, vérképzés.</p>
+    </details>
+
+    <details>
+        <summary><strong>Magnézium</strong></summary>
+        <p><strong>Ajánlott napi mennyiség:</strong> 600–800 mg (400–800 mg biszglicinát formában)</p>
+        <p>Izomműködés, energiatermelés. Legjobb biszglicinát vagy laktát forma.</p>
+    </details>
+
+    <details>
+        <summary><strong>Cink</strong></summary>
+        <p><strong>Ajánlott napi mennyiség:</strong> 20–30 mg</p>
+        <p>Immunrendszer támogatása.</p>
+    </details>
+
+    <details>
+        <summary><strong>Szelén</strong></summary>
+        <p><strong>Ajánlott napi mennyiség:</strong> 200–300 mcg</p>
+        <p>Antioxidáns, sejtvédő hatás.</p>
+    </details>
+
+    <details>
+        <summary><strong>Jód</strong></summary>
+        <p><strong>Ajánlott napi mennyiség:</strong> 200–300 mcg</p>
+        <p>Pajzsmirigy-működéshez elengedhetetlen.</p>
+    </details>
+
+    <details>
+        <summary><strong>Króm</strong></summary>
+        <p><strong>Ajánlott napi mennyiség:</strong> 200–400 mcg</p>
+        <p>Vércukorszint-szabályozás segítése.</p>
+    </details>
+
+    <details>
+        <summary><strong>Kalcium</strong></summary>
+        <p><strong>Ajánlott napi mennyiség:</strong> 1000–1500 mg</p>
+        <p>D- és K2-vitaminnal együtt a legjobb hasznosulás.</p>
+    </details>
+
+    <details>
+        <summary><strong>Omega-3 (halolaj)</strong></summary>
+        <p><strong>Ajánlott napi mennyiség:</strong> 2–4 g</p>
+        <p>Gyulladáscsökkentő, szív- és érrendszer-védő.</p>
+    </details>
+
+    <h2>Egyéb említett tápanyagok</h2>
+    <ul>
+        <li><strong>A-vitamin:</strong> 800–3000 mcg</li>
+        <li><strong>B-vitamin komplex:</strong> Különösen B6, B12 és folát – komplex formában ajánlott az energiatermeléshez és idegrendszerhez.</li>
+        <li><strong>K-vitamin (általános):</strong> 90–120 mcg</li>
+    </ul>
+
+    <h2>Általános tanácsok</h2>
+    <ul>
+        <li>Aktív formák előnyben (pl. B12: metilkobalamin; magnézium: biszglicinát).</li>
+        <li>Ne csak multivitamint szedjünk, hanem a legfontosabbakat <strong>külön-külön</strong>, egyéni igények szerint – így hatékonyabb.</li>
+        <li><strong>Kombinációk:</strong> D-vitamin + K2-vitamin + magnézium a kalcium-anyagcsere optimalizálásához.</li>
+        <li>D-vitamin pótlás télen-nyáron szükséges napfényhiány esetén, magas dózisban.</li>
+    </ul>
+
+    <div class="back-link">
+        <a href="/fogyaszthato-etelek/">← Vissza az Étel Adatbázishoz</a>
+    </div>
+</body>
+</html>
