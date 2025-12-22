@@ -17,7 +17,7 @@
 </head>
 <body class="p-6">
     <h1 class="text-3xl font-bold text-center mb-6">Személyre Szabott Tápanyag Ajánlás</h1>
-    
+   
     <div class="max-w-2xl mx-auto bg-gray-800 p-6 rounded-lg">
         <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
             <div>
@@ -54,14 +54,11 @@
             <button onclick="calculate()" class="px-6 py-3 bg-blue-600 rounded hover:bg-blue-700">Számítás</button>
         </div>
     </div>
-
     <div id="results" class="max-w-4xl mx-auto mt-10"></div>
-
     <div class="back-link">
         <a href="/fogyaszthato-etelek/">← Vissza az Étel Adatbázishoz</a> |
         <a href="/fogyaszthato-etelek/tapanyag-ajanlas.html">Statikus Ajánlás (110 kg-os férfi)</a>
     </div>
-
     <script>
         function calculate() {
             const weight = parseFloat(document.getElementById('weight').value) || 110;
@@ -69,7 +66,6 @@
             const age = parseFloat(document.getElementById('age').value) || 62;
             const gender = document.getElementById('gender').value || 'male';
             const activityLevel = parseFloat(document.getElementById('activity').value) || 1.2;
-
             // Harris-Benedict BMR
             let bmr;
             if (gender === 'male') {
@@ -78,93 +74,64 @@
                 bmr = 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age);
             }
             const dailyCalories = Math.round(bmr * activityLevel);
-
             // Makrotápanyagok
             const proteinMin = Math.round(1.4 * weight);
             const proteinMax = Math.round(1.7 * weight);
             const proteinKcalMin = proteinMin * 4;
             const proteinKcalMax = proteinMax * 4;
-
             const carbsMin = Math.round(dailyCalories * 0.45 / 4);
             const carbsMax = Math.round(dailyCalories * 0.65 / 4);
             const carbsKcalMin = carbsMin * 4;
             const carbsKcalMax = carbsMax * 4;
-
             const fatMin = Math.round(dailyCalories * 0.20 / 9);
             const fatMax = Math.round(dailyCalories * 0.35 / 9);
             const fatKcalMin = fatMin * 9;
             const fatKcalMax = fatMax * 9;
-
             // Vitaminok/ásványi anyagok konkretizálva
-            // D-vitamin: Alap 8000 NE, +50 NE/10 kg 70 felett, +2000 NE kor >60, +1000 NE intenzív aktivitásnál
             let dVitaminBase = 8000;
             if (weight > 70) dVitaminBase += Math.round((weight - 70) * 5);
             if (age > 60) dVitaminBase += 2000;
             if (activityLevel > 1.55) dVitaminBase += 1000;
-            let dVitamin = `${dVitaminBase}–${dVitaminBase + 4000} NE/nap (testsúly és életkor függő, aktivitás növeli)`;
+            let dVitamin = `${dVitaminBase}–${dVitaminBase + 4000} NE/nap (testsúly, életkor és aktivitás függő)`;
             let dVitaminNote = 'Télen-nyáron pótlás, K2-vitaminnal és magnéziummal együtt.';
-
-            // K2-vitamin: Fix, nem függ
             let k2Vitamin = '100–150 mcg/nap (nem függ jelentősen testsúlytól, életkortól vagy aktivitástól)';
-
-            // C-vitamin: Alap 1000 mg, +500 mg közepes aktivitásnál, +1000 intenzívnél, kor >50 +200 mg
             let cVitaminBase = 1000;
             if (age > 50) cVitaminBase += 200;
             if (activityLevel > 1.375) cVitaminBase += 500;
             if (activityLevel > 1.55) cVitaminBase += 500;
             let cVitamin = `${cVitaminBase}–${cVitaminBase + 1000} mg/nap (aktivitás és életkor függő)`;
-
-            // E-vitamin: Fix, nem függ
             let eVitamin = '400–800 NE/nap (nem függ jelentősen testsúlytól, életkortól vagy aktivitástól)';
-
-            // B12: Alap 500 mcg, kor >50 +300 mcg (felszívódás csökken)
             let b12Base = 500;
             if (age > 50) b12Base += 300;
             let b12Vitamin = `${b12Base}–${b12Base + 500} mcg/nap (metilkobalamin forma; életkor függő)';
-
-            // Magnézium: 5-7 mg/kg, + aktivitás szorzó (1.1 közepes, 1.2 intenzív), nem szerint +50 mg férfiaknak
             let magnesiumBase = Math.round(6 * weight);
             if (gender === 'male') magnesiumBase += 50;
             if (activityLevel > 1.375) magnesiumBase = Math.round(magnesiumBase * 1.1);
             if (activityLevel > 1.55) magnesiumBase = Math.round(magnesiumBase * 1.2);
             let magnesium = `${magnesiumBase - 100}–${magnesiumBase + 100} mg/nap (biszglicinát; testsúly, nem és aktivitás függő)';
-
-            // Cink: Alap 20 mg férfi, 15 nő, +5 mg intenzív aktivitásnál
             let zincBase = gender === 'male' ? 20 : 15;
             if (activityLevel > 1.55) zincBase += 5;
             let zinc = `${zincBase}–${zincBase + 10} mg/nap (nem és aktivitás függő; testsúly nem befolyásolja jelentősen)';
-
-            // Szelén: Alap 200 mcg, kor >60 +50 mcg
             let seleniumBase = 200;
             if (age > 60) seleniumBase += 50;
             let selenium = `${seleniumBase}–${seleniumBase + 100} mcg/nap (életkor függő; aktivitás és súly nem befolyásolja jelentősen)';
-
-            // Jód: Fix 200 mcg, nőknek +50 mcg ha kor >18 (terhességre felkészülés)
             let iodineBase = 200;
             if (gender === 'female' && age > 18) iodineBase += 50;
             let iodine = `${iodineBase}–${iodineBase + 100} mcg/nap (nem függő; életkor, súly és aktivitás nem befolyásolja jelentősen)';
-
-            // Króm: Alap 200 mcg, kor >50 -50 mcg (RDA csökken)
             let chromiumBase = 200;
             if (age > 50) chromiumBase -= 50;
             let chromium = `${chromiumBase}–${chromiumBase + 200} mcg/nap (életkor függő; súly és aktivitás nem befolyásolja jelentősen)';
-
-            // Kalcium: Alap 1000 mg, kor >50 +200 mg nőknek, +100 mg intenzív aktivitásnál
             let calciumBase = 1000;
             if (age > 50 && gender === 'female') calciumBase += 200;
             if (activityLevel > 1.55) calciumBase += 100;
             let calcium = `${calciumBase}–${calciumBase + 500} mg/nap (nem, életkor és aktivitás függő; súly nem befolyásolja jelentősen)';
-
-            // Omega-3: Alap 2 g, +1 g intenzív aktivitásnál
             let omega3Base = 2;
             if (activityLevel > 1.55) omega3Base += 1;
             let omega3 = `${omega3Base}–${omega3Base + 2} g/nap (aktivitás függő; életkor és súly nem befolyásolja jelentősen)`;
-
             const results = `
                 <h2 class="text-2xl font-bold mb-4">Személyre szabott ajánlás</h2>
                 <p><strong>Adatok:</strong> ${weight} kg, ${height} cm, ${age} év (${gender === 'male' ? 'férfi' : 'nő'}, aktivitás szorzó: ${activityLevel})</p>
                 <p><strong>Becsült napi kalóriaigény:</strong> ${dailyCalories} kcal</p>
-
                 <h3 class="text-xl mt-8 mb-4">Makrotápanyagok</h3>
                 <ul class="space-y-4">
                     <li>
@@ -180,10 +147,8 @@
                         <small>→ ${fatKcalMin}–${fatKcalMax} kcal (20–35% a napi energiából)</small>
                     </li>
                 </ul>
-
                 <h3 class="text-xl mt-8 mb-4">Vitaminok és ásványi anyagok (optimális tartomány gyulladáscsökkentő étrendhez)</h3>
                 <p>A dózisok életkor, testsúly, nem és aktivitás alapján adjustálva, ahol van függés. Ha nem, azt jelezzük.</p>
-
                 <details open><summary><strong>D-vitamin</strong></summary>
                     <p>${dVitamin}</p>
                     <p>${dVitaminNote}</p>
@@ -199,7 +164,6 @@
                 <details><summary><strong>Króm</strong></summary><p>${chromium}</p></details>
                 <details><summary><strong>Kalcium</strong></summary><p>${calcium}</p></details>
                 <details><summary><strong>Omega-3 (EPA+DHA)</strong></summary><p>${omega3}</p></details>
-
                 <h3 class="text-xl mt-8 mb-4">Általános tanácsok</h3>
                 <ul class="list-disc pl-6 space-y-2">
                     <li>Aktív, jól felszívódó formákat válassz (pl. metilkobalamin, biszglicinát).</li>
@@ -208,10 +172,8 @@
                     <li>Konzultálj orvossal vérvétel alapján.</li>
                 </ul>
             `;
-
             document.getElementById('results').innerHTML = results;
         }
-
         window.onload = calculate;
     </script>
 </body>
