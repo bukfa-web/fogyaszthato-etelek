@@ -817,7 +817,7 @@
             // Mentsük az adatokat a localStorage-ba a " jelek eltávolítása és a feliratok frissítése után
             saveDataToLocalStorage();
             // Táblázat renderelése és csoportok feltöltése
-            renderTable(currentData);
+            renderTable();  // most már nincs paraméter
             populateGroupOptions();
         }
 
@@ -828,9 +828,9 @@
         }
 
         // Táblázat renderelése
-        function renderTable(data) {
+        function renderTable() {
             sortData();
-            filterTable(data);
+            filterTable(currentData);
         }
 
         // Ételcsoportok feltöltése a legördülő listába
