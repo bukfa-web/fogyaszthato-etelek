@@ -14,6 +14,11 @@
     <style>
         .sort-asc::after { content: " ▲"; }
         .sort-desc::after { content: " ▼"; }
+        input[type="text"]:focus, select:focus {
+            outline: none;
+            border-color: #06b6d4;
+            box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.3);
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-200 p-4 min-h-screen">
@@ -61,10 +66,11 @@
 
     <script src="data.js"></script>
     <script>
-        let foodData = [];        // Teljes adatbázis
-        let filteredData = [];    // Szűrt adatok
-        let sortColumn = 'name';  // Alapértelmezett rendezés
-        let sortDirection = 'asc'; // asc vagy desc
+        let foodData = [];
+        let filteredData = [];
+        let sortColumn = 'name';
+        let sortDirection = 'asc';
+        let editingRow = null; // jelenleg szerkesztett sor
 
         function loadData() {
             const saved = localStorage.getItem('foodData');
@@ -75,13 +81,13 @@
             } else {
                 foodData = [];
             }
-            applyFiltersAndSort();
             populateGroupFilter();
+            applyFiltersAndSort();
         }
 
         function populateGroupFilter() {
             const groupFilter = document.getElementById('groupFilter');
-            const groups = [...new Set(foodData.map(item => item.group || 'Nincs')).filter(g => g)].sort();
+            const groups = [...new Set(foodData.map(item => item.group || 'Ismeretlen').filter(Boolean))].sort();
             groupFilter.innerHTML = '<option value="">Minden csoport</option>';
             groups.forEach(group => {
                 const opt = document.createElement('option');
@@ -94,30 +100,24 @@
         function applyFiltersAndSort() {
             let data = foodData.slice();
 
-            // Keresés
             const search = document.getElementById('searchInput').value.trim().toLowerCase();
             if (search) {
                 data = data.filter(item => item.name.toLowerCase().includes(search));
             }
 
-            // Ajánlás szűrő
             const rec = document.getElementById('recommendationFilter').value;
             if (rec) {
                 data = data.filter(item => item.recommendation === rec);
             }
 
-            // Csoport szűrő
             const group = document.getElementById('groupFilter').value;
             if (group) {
                 data = data.filter(item => item.group === group);
             }
 
-            // Rendezés
             data.sort((a, b) => {
-                let valA = a[sortColumn] || '';
-                let valB = b[sortColumn] || '';
-                if (typeof valA === 'string') valA = valA.toLowerCase();
-                if (typeof valB === 'string') valB = valB.toLowerCase();
+                let valA = (a[sortColumn] || '').toString().toLowerCase();
+                let valB = (b[sortColumn] || '').toString().toLowerCase();
                 if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
                 if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
                 return 0;
@@ -139,26 +139,26 @@
                 return;
             }
 
-            filteredData.forEach(item => {
+            filteredData.forEach((item, index) => {
                 const tr = document.createElement('tr');
+                tr.dataset.index = index;
                 tr.className = item.recommendation === 'Igen Kérek' 
                     ? 'bg-green-900/30 hover:bg-green-900/50' 
                     : 'bg-red-900/30 hover:bg-red-900/50';
+
                 tr.innerHTML = `
-                    <td class="p-4 border-r border-gray-700">${escapeHtml(item.name)}</td>
-                    <td class="p-4 border-r border-gray-700">${escapeHtml(item.group || '')}</td>
-                    <td class="p-4 border-r border-gray-700">${escapeHtml(item.recommendation || '')}</td>
-                    <td class="p-4 border-r border-gray-700">${escapeHtml(item.note || '')}</td>
+                    <td class="p-4 border-r border-gray-700" ondblclick="startEdit(this, 'name')">${escapeHtml(item.name)}</td>
+                    <td class="p-4 border-r border-gray-700" ondblclick="startEdit(this, 'group')">${escapeHtml(item.group || '')}</td>
+                    <td class="p-4 border-r border-gray-700" ondblclick="startEdit(this, 'recommendation')">${escapeHtml(item.recommendation || '')}</td>
+                    <td class="p-4 border-r border-gray-700" ondblclick="startEdit(this, 'note')">${escapeHtml(item.note || '')}</td>
                     <td class="p-4 text-center">
-                        <button class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-1 rounded mr-2 text-sm edit-btn">Szerk.</button>
                         <button class="bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded text-sm delete-btn">Töröl</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
 
-            // Eseménykezelők hozzáadása az új gombokhoz
-            addRowEventListeners();
+            addEventListeners();
         }
 
         function escapeHtml(text) {
@@ -167,29 +167,94 @@
             return div.innerHTML;
         }
 
-        function addRowEventListeners() {
+        function addEventListeners() {
             document.querySelectorAll('.delete-btn').forEach(btn => {
                 btn.onclick = () => {
                     if (confirm('Biztosan törlöd ezt az ételt?')) {
                         const row = btn.closest('tr');
-                        const name = row.cells[0].textContent;
-                        foodData = foodData.filter(item => item.name !== name);
-                        localStorage.setItem('foodData', JSON.stringify(foodData));
-                        applyFiltersAndSort();
+                        const name = row.cells[0].textContent.trim();
+                        foodData = foodData.filter(item => item.name.trim() !== name);
+                        saveToLocalStorage();
                         populateGroupFilter();
+                        applyFiltersAndSort();
                     }
                 };
             });
+        }
 
-            // Szerkesztés egyelőre csak alerttel (később bővíthető inline szerkesztésre)
-            document.querySelectorAll('.edit-btn').forEach(btn => {
-                btn.onclick = () => {
-                    const row = btn.closest('tr');
-                    const name = row.cells[0].textContent;
-                    alert(`Szerkesztés funkció hamarosan!\n\nÉteltípus: ${name}`);
-                    // Később ide jöhet inline szerkesztés
-                };
-            });
+        function startEdit(cell, field) {
+            if (editingRow !== null) {
+                cancelEdit();
+            }
+
+            editingRow = cell.parentElement;
+            const originalValue = cell.textContent;
+
+            let input;
+            if (field === 'recommendation') {
+                input = document.createElement('select');
+                input.innerHTML = `
+                    <option value="Igen Kérek">Igen Kérek</option>
+                    <option value="Köszönöm nem kérek">Köszönöm nem kérek</option>
+                `;
+                input.value = originalValue;
+            } else {
+                input = document.createElement('input');
+                input.type = 'text';
+                input.value = originalValue;
+                input.className = 'bg-gray-700 text-white px-2 py-1 rounded border border-cyan-500 w-full';
+            }
+
+            input.onblur = () => saveEdit(field, input.value.trim());
+            input.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    saveEdit(field, input.value.trim());
+                } else if (e.key === 'Escape') {
+                    cancelEdit();
+                }
+            };
+
+            cell.innerHTML = '';
+            cell.appendChild(input);
+            input.focus();
+            if (input.select) input.select();
+        }
+
+        function saveEdit(field, newValue) {
+            if (editingRow === null) return;
+
+            const index = filteredData[editingRow.dataset.index];
+            const originalItem = foodData.find(item => item.name === index.name && item.group === index.group);
+
+            if (originalItem) {
+                if (field === 'name' && newValue === '') {
+                    alert('A megnevezés nem lehet üres!');
+                    cancelEdit();
+                    return;
+                }
+
+                originalItem[field] = newValue;
+
+                if (field === 'group') {
+                    populateGroupFilter();
+                }
+
+                saveToLocalStorage();
+                applyFiltersAndSort();
+            }
+
+            editingRow = null;
+        }
+
+        function cancelEdit() {
+            if (editingRow) {
+                applyFiltersAndSort();
+                editingRow = null;
+            }
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('foodData', JSON.stringify(foodData));
         }
 
         function updateSortIndicators() {
@@ -202,7 +267,7 @@
         }
 
         function handleSort(e) {
-            const column = e.target.dataset.sort;
+            const column = e.target.closest('th').dataset.sort;
             if (sortColumn === column) {
                 sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
             } else {
@@ -242,6 +307,13 @@
             th.addEventListener('click', handleSort);
         });
 
+        // Kattintás máshová → szerkesztés mentése vagy elvetése
+        document.addEventListener('click', (e) => {
+            if (editingRow && !editingRow.contains(e.target)) {
+                cancelEdit();
+            }
+        });
+
         function importData(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -252,12 +324,12 @@
                     if (!Array.isArray(imported)) throw new Error('Nem tömb');
                     let added = 0;
                     imported.forEach(newItem => {
-                        if (!foodData.some(item => item.name.toLowerCase() === (newItem.name || '').toLowerCase())) {
+                        if (!foodData.some(item => item.name.toLowerCase().trim() === (newItem.name || '').toLowerCase().trim())) {
                             foodData.push(newItem);
                             added++;
                         }
                     });
-                    localStorage.setItem('foodData', JSON.stringify(foodData));
+                    saveToLocalStorage();
                     populateGroupFilter();
                     applyFiltersAndSort();
                     alert(`Import sikeres! ${added} új étel hozzáadva. Összesen: ${foodData.length}`);
