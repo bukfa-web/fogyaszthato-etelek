@@ -73,7 +73,7 @@
             </label>
         </div>
 
-        <table id="foodTable" class="w-full table-auto border-collapse">
+        <table id="foodTable" class="w-full border-collapse">
             <thead class="bg-blue-800 text-white">
                 <tr>
                     <th class="p-3 text-left cursor-pointer" data-sort="name">Megnevezés</th>
@@ -88,85 +88,33 @@
     </div>
 
     <script>
-        const initialFoodData = [
-          {
-            "name": "Áfonya",
-            "group": "Gyümölcsök",
-            "recommendation": "Igen Kérek",
-            "note": "Antioxidánsokban gazdag, szezonálisan kis mennyiségben"
-          },
-          {
-            "name": "Agvé",
-            "group": "Finomított keményítőt tartalmazó ételek",
-            "recommendation": "Köszönöm nem kérek",
-            "note": "Magas fruktóztartalom, káros a bélflórára"
-          },
-          {
-            "name": "Ajóka",
-            "group": "Halak",
-            "recommendation": "Igen Kérek",
-            "note": "Omega-3 forrás, támogatja a szív egészségét"
-          },
-          {
-            "name": "Alakor (einkorn búza)",
-            "group": "Pszeudo-gabonák",
-            "recommendation": "Köszönöm nem kérek",
-            "note": "Lektintartalma miatt gyulladáskeltő"
-          },
-          {
-            "name": "Alaszkai laposhal",
-            "group": "Halak",
-            "recommendation": "Igen Kérek",
-            "note": "Alacsony higanytartalom, omega-3-ban gazdag"
-          },
-          {
-            "name": "Alaszkai lazac",
-            "group": "Halak",
-            "recommendation": "Igen Kérek",
-            "note": "Magas omega-3, gyulladáscsökkentő hatás"
-          },
-          {
-            "name": "Alga olaj",
-            "group": "Olajok",
-            "recommendation": "Igen Kérek",
-            "note": "Növényi omega-3 forrás, szívbarát"
-          },
-          {
-            "name": "Alma",
-            "group": "Gyümölcsök",
-            "recommendation": "Igen Kérek",
-            "note": "Prebiotikus rostok, szezonálisan kis mennyiségben"
-          },
-          // ... a teljes lista itt folytatódik (a <DOCUMENT>-ből a teljes tömb)
-          // A teljes listát ide másold be, ahogy a foodData.json-ból van
-          {
-            "name": "Zöld tea",
-            "group": "Italok",
-            "recommendation": "Igen Kérek",
-            "note": "Antioxidánsokban (katekin) gazdag, gyulladáscsökkentő, támogatja az anyagcserét – Dr. Balsai a természetes italokat javasolja"
-          },
-          {
-            "name": "Zsálya",
-            "group": "Fűszerek",
-            "recommendation": "Igen Kérek",
-            "note": "Gyulladáscsökkentő, immunerősítő – Dr. Balsai a természetes fűszereket javasolja"
-          }
-        ];
-
         let foodData = [];
         let currentData = [];
         let editingName = null;
 
-        function loadDataFromLocalStorage() {
-            const saved = localStorage.getItem('foodData');
-            if (saved) {
-                foodData = JSON.parse(saved);
-            } else {
-                foodData = initialFoodData.slice();
-            }
-            currentData = foodData.slice();
-            renderTable();
-            setupColumnSelector();
+        // Adatok betöltése JSON fájlból (foodData.json)
+        function loadFoodData() {
+            fetch('./foodData.json')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Hiba a foodData.json betöltésekor');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    foodData = data;
+                    const savedData = localStorage.getItem('foodData');
+                    if (savedData) {
+                        foodData = JSON.parse(savedData);
+                    }
+                    currentData = foodData.slice();
+                    renderTable();
+                    setupColumnSelector();
+                })
+                .catch(error => {
+                    console.error('Betöltési hiba:', error);
+                    alert('Nem sikerült betölteni az étel adatbázist. Ellenőrizd a foodData.json fájlt!');
+                });
         }
 
         function renderTable() {
@@ -189,13 +137,35 @@
             });
         }
 
+        function filterTable(data) {
+            currentData = data.filter(item => {
+                const search = document.getElementById('searchInput').value.toLowerCase();
+                const recommendation = document.getElementById('recommendationFilter').value;
+                return (
+                    item.name.toLowerCase().includes(search) &&
+                    (recommendation === "" || item.recommendation === recommendation)
+                );
+            });
+            renderTable();
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            filterTable(foodData);
+        }
+
+        function resetFilters() {
+            document.getElementById('recommendationFilter').value = '';
+            clearSearch();
+        }
+
         function exportData() {
             const dataStr = JSON.stringify(foodData, null, 2);
             const blob = new Blob([dataStr], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'foodData_backup.json';
+            a.download = 'foodData.json';
             a.click();
             URL.revokeObjectURL(url);
         }
@@ -230,16 +200,25 @@
             reader.readAsText(file);
         }
 
-        // Eseménykezelők
-        document.getElementById('searchInput').addEventListener('input', () => filterTable(currentData));
-        document.getElementById('recommendationFilter').addEventListener('change', () => filterTable(currentData));
+        function handleSort(e) {
+            const column = e.target.dataset.sort;
+            foodData.sort((a, b) => a[column].localeCompare(b[column]));
+            filterTable(foodData);
+        }
+
+        // Inicializálás
+        loadFoodData();
+
+        document.getElementById('searchInput').addEventListener('input', () => filterTable(foodData));
+        document.getElementById('recommendationFilter').addEventListener('change', () => filterTable(foodData));
         document.getElementById('clearSearchButton').addEventListener('click', clearSearch);
         document.getElementById('resetFiltersButton').addEventListener('click', resetFilters);
         document.getElementById('exportButton').addEventListener('click', exportData);
         document.getElementById('importInput').addEventListener('change', importData);
 
-        // Inicializálás
-        loadDataFromLocalStorage();
+        document.querySelectorAll('th[data-sort]').forEach(header => {
+            header.addEventListener('click', handleSort);
+        });
     </script>
 </body>
 </html>
