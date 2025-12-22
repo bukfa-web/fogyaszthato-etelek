@@ -1,5 +1,4 @@
 const initialFoodData = [
-  [
   {
     "name": "Áfonya",
     "group": "Gyümölcsök",
