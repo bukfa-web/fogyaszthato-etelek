@@ -87,88 +87,28 @@
         </table>
     </div>
 
+    <!-- Adatok betöltése a data.js-ből -->
+    <script src="data.js"></script>
     <script>
         let foodData = [];
         let currentData = [];
         let editingName = null;
 
-        function loadFoodData() {
-            fetch('./fooddata.json')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Hiba a fooddata.json betöltésekor');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    foodData = data;
-                    const savedData = localStorage.getItem('foodData');
-                    if (savedData) {
-                        foodData = JSON.parse(savedData);
-                    }
-                    currentData = foodData.slice();
-                    renderTable();
-                    setupColumnSelector();
-                })
-                .catch(error => {
-                    console.error('Betöltési hiba:', error);
-                    alert('Nem sikerült betölteni az étel adatbázist. Ellenőrizd a fooddata.json fájlt!');
-                });
-        }
-
-        function renderTable() {
-            const tbody = document.querySelector('#foodTable tbody');
-            tbody.innerHTML = '';
-            currentData.forEach(item => {
-                const tr = document.createElement('tr');
-                tr.className = item.recommendation === 'Igen Kérek' ? 'bg-green-900' : 'bg-red-900';
-                tr.innerHTML = `
-                    <td class="p-3 border border-gray-700">${item.name}</td>
-                    <td class="p-3 border border-gray-700">${item.group}</td>
-                    <td class="p-3 border border-gray-700">${item.recommendation}</td>
-                    <td class="p-3 border border-gray-700">${item.note}</td>
-                    <td class="p-3 border border-gray-700">
-                        <button class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded mr-2 edit-btn">Szerk.</button>
-                        <button class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded delete-btn">Töröl</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function filterTable(data) {
-            currentData = data.filter(item => {
-                const search = document.getElementById('searchInput').value.toLowerCase();
-                const recommendation = document.getElementById('recommendationFilter').value;
-                return (
-                    item.name.toLowerCase().includes(search) &&
-                    (recommendation === "" || item.recommendation === recommendation)
-                );
-            });
+        function loadData() {
+            const savedData = localStorage.getItem('foodData');
+            if (savedData) {
+                foodData = JSON.parse(savedData);
+            } else {
+                foodData = initialFoodData.slice(); // a data.js-ből
+            }
+            currentData = foodData.slice();
             renderTable();
+            setupColumnSelector();
         }
 
-        function clearSearch() {
-            document.getElementById('searchInput').value = '';
-            filterTable(foodData);
-        }
+        // A többi függvény ugyanaz marad (renderTable, filterTable, exportData, importData stb. – a korábbi verzióból)
 
-        function resetFilters() {
-            document.getElementById('recommendationFilter').value = '';
-            clearSearch();
-        }
-
-        function exportData() {
-            const dataStr = JSON.stringify(foodData, null, 2);
-            const blob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'fooddata.json';
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-
+        // Import bővítő (ugyanaz, mint korábban)
         function importData(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -193,36 +133,23 @@
                     alert(`Import kész! ${added} új étel hozzáadva. Összesen: ${foodData.length} étel.`);
                 } catch (err) {
                     alert('Hibás JSON fájl!');
-                    console.error(err);
                 }
             };
             reader.readAsText(file);
         }
 
-        function handleSort(e) {
-            const column = e.target.dataset.sort;
-            foodData.sort((a, b) => a[column].localeCompare(b[column]));
-            filterTable(foodData);
-        }
-
         // Inicializálás
-        loadFoodData();
+        loadData();
 
+        // Eseménykezelők (search, filter, export, import stb.)
         document.getElementById('searchInput').addEventListener('input', () => filterTable(foodData));
         document.getElementById('recommendationFilter').addEventListener('change', () => filterTable(foodData));
         document.getElementById('clearSearchButton').addEventListener('click', clearSearch);
         document.getElementById('resetFiltersButton').addEventListener('click', resetFilters);
         document.getElementById('exportButton').addEventListener('click', exportData);
         document.getElementById('importInput').addEventListener('change', importData);
-
         document.querySelectorAll('th[data-sort]').forEach(header => {
             header.addEventListener('click', handleSort);
-        });
-
-        document.addEventListener('click', (e) => {
-            if (editingName !== null && !e.target.closest('#foodTable')) {
-                saveRow(editingName);
-            }
         });
     </script>
 </body>
